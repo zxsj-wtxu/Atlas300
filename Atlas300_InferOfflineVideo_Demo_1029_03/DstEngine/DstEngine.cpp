@@ -134,8 +134,6 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
 }
 HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
 {
-    std::shared_ptr<std::string> inputArg = std::static_pointer_cast<std::string>(arg0);
-    std::cout << "DstEngine:" << *inputArg <<std::endl;
 //    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] start process!");
 //    if (arg0 == nullptr){
 //        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  The input arg0 is nullptr");
@@ -167,6 +165,8 @@ HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
 //        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  save jpg file failed");
 //        return HIAI_ERROR;
 //    }
+    std::shared_ptr<std::string> inputArg = std::static_pointer_cast<std::string>(arg0);
+    std::cout << "DstEngine:" << *inputArg <<std::endl;
     std::shared_ptr<std::string> outputData = std::make_shared<std::string>("DstEngine");
     HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(outputData));
     HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] end process!");

@@ -141,8 +141,11 @@ HIAI_IMPL_ENGINE_PROCESS("SSDDetection", SSDDetection, DT_INPUT_SIZE)
 
 //    postProcessDetection();
 //    inputArgQueue.clear();
-    std::shared_ptr<std::string> outputData = std::make_shared<std::string>("SSDDetection");
-    HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(outputData));
+    if(arg0 != nullptr){
+        std::shared_ptr<std::string> outputData = std::make_shared<std::string>("SSDDetection");
+        HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(outputData));
+    }
+
     return HIAI_OK;
 }
 
