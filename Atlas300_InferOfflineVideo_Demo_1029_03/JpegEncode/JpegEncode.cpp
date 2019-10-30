@@ -38,8 +38,7 @@
 #include "hiaiengine/ai_memory.h"
 #include "stream_data.h"
 
-HIAI_StatusT JpegEncode::Init(const hiai::AIConfig &config,
-    const std::vector<hiai::AIModelDescription> &model_desc)
+HIAI_StatusT JpegEncode::Init(const hiai::AIConfig &config, const std::vector<hiai::AIModelDescription> &model_desc)
 {
     HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode] start init!");
     printf("[JpegEncode] start init\n");
@@ -53,46 +52,50 @@ HIAI_StatusT JpegEncode::Init(const hiai::AIConfig &config,
 
 HIAI_IMPL_ENGINE_PROCESS("JpegEncode", JpegEncode, JC_INPUT_SIZE)
 {
-    HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode] start process!");
-    if (arg0 == nullptr) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[JpegEncode]  The input arg0 is nullptr");
-        return HIAI_ERROR;
-    }
-    std::shared_ptr<DeviceStreamData> deviceStreamData = std::static_pointer_cast<DeviceStreamData>(arg0);
-    HIAI_StatusT ret;
-    // the stream is end
-    if (deviceStreamData->info.isEOS) {
-        ret = SendData(0, "DeviceStreamData", deviceStreamData);
-        HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode]  The stream is end!");
-        return HIAI_OK;
-    }
-    JpegEncodeIn inData;
-    JpegEncodeOut outData;
-    inData.inWidth = deviceStreamData->imgOrigin.width;
-    inData.inHeight = deviceStreamData->imgOrigin.height;
-    inData.inBufferSize = deviceStreamData->imgOrigin.buf.len_of_byte;
-    inData.inBufferPtr = deviceStreamData->imgOrigin.buf.data;
-    //    JPGENC_FORMAT_UYVY = 0x0,
-    //    JPGENC_FORMAT_VYUY = 0x1,
-    //    JPGENC_FORMAT_YVYU = 0x2,
-    //    JPGENC_FORMAT_YUYV = 0x3,
-    //    JPGENC_FORMAT_NV12 = 0x10,
-    //    JPGENC_FORMAT_NV21 = 0x11,
-    inData.format = JPGENC_FORMAT_NV12;
-    inData.level = 100;
-    ret = dvppJpegEapi->Encode(inData, outData);
-    if (ret != HIAI_OK) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[JpegEncode]  failed to encode jpeg!");
-        return HIAI_ERROR;
+//    HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode] start process!");
+//    if (arg0 == nullptr) {
+//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[JpegEncode]  The input arg0 is nullptr");
+//        return HIAI_ERROR;
+//    }
+//    std::shared_ptr<DeviceStreamData> deviceStreamData = std::static_pointer_cast<DeviceStreamData>(arg0);
+//    HIAI_StatusT ret;
+//    // the stream is end
+//    if (deviceStreamData->info.isEOS) {
+//        ret = SendData(0, "DeviceStreamData", deviceStreamData);
+//        HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode]  The stream is end!");
+//        return HIAI_OK;
+//    }
+//    JpegEncodeIn inData;
+//    JpegEncodeOut outData;
+//    inData.inWidth = deviceStreamData->imgOrigin.width;
+//    inData.inHeight = deviceStreamData->imgOrigin.height;
+//    inData.inBufferSize = deviceStreamData->imgOrigin.buf.len_of_byte;
+//    inData.inBufferPtr = deviceStreamData->imgOrigin.buf.data;
+//    //    JPGENC_FORMAT_UYVY = 0x0,
+//    //    JPGENC_FORMAT_VYUY = 0x1,
+//    //    JPGENC_FORMAT_YVYU = 0x2,
+//    //    JPGENC_FORMAT_YUYV = 0x3,
+//    //    JPGENC_FORMAT_NV12 = 0x10,
+//    //    JPGENC_FORMAT_NV21 = 0x11,
+//    inData.format = JPGENC_FORMAT_NV12;
+//    inData.level = 100;
+//    ret = dvppJpegEapi->Encode(inData, outData);
+//    if (ret != HIAI_OK) {
+//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[JpegEncode]  failed to encode jpeg!");
+//        return HIAI_ERROR;
+//    }
+
+//    HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode]  in out buffer size is %d vs %d, %x\n", inData.inBufferSize,
+//            outData.outBufferSize, outData.outBufferPtr.get());
+
+//    deviceStreamData->imgOrigin.buf.len_of_byte = outData.outBufferSize;
+//    deviceStreamData->imgOrigin.buf.data = outData.outBufferPtr;
+    if (arg0 != nullptr) {
+        std::shared_ptr<std::string> outputData = std::make_shared<std::string>("JpegEncode");
+        *outputData += *std::static_pointer_cast<std::string>(arg0);
+        HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(outputData));
     }
 
-    HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode]  in out buffer size is %d vs %d, %x\n", inData.inBufferSize,
-            outData.outBufferSize, outData.outBufferPtr.get());
-
-    deviceStreamData->imgOrigin.buf.len_of_byte = outData.outBufferSize;
-    deviceStreamData->imgOrigin.buf.data = outData.outBufferPtr;
-
-    ret = SendData(0, "DeviceStreamData", deviceStreamData);
     HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[JpegEncode] end process!");
     return HIAI_OK;
 }

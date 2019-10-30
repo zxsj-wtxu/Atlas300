@@ -46,6 +46,7 @@ using Stat = struct stat;
 HIAI_StatusT VDecEngine::Init(const hiai::AIConfig &config,
                               const std::vector<hiai::AIModelDescription> &model_desc)
 {
+    printf("[VDecEngine] init start.\n");
     HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[VDecEngine] init start.");
     if (pVdecHandle == NULL) {
         int ret = CreateVdecApi(pVdecHandle, 0);
@@ -62,6 +63,8 @@ HIAI_StatusT VDecEngine::Init(const hiai::AIConfig &config,
     }
     vdecInMsg.call_back = VDecEngine::FrameCallback;
     HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[VDecEngine] init is finished.");
+    printf("[VDecEngine] init is finished.\n");
+
     return HIAI_OK;
 }
 

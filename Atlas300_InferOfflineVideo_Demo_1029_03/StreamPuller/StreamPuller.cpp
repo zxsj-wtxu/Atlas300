@@ -187,15 +187,15 @@ HIAI_StatusT StreamPuller::startStream(const string& streamName)
 
 HIAI_StatusT StreamPuller::Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc)
 {
-    //printf("StreamPuller Init start\n");
+    printf("StreamPuller Init start\n");
     auto aimap = kvmap(config);
     if (aimap.count("format")) {
         if (aimap["format"] == "h264") {
             format = H264;
-	printf("format:h264\n");
+    printf("format:h264\n");
         } else {
             format = H265;
-	printf("format:h265\n");
+    printf("format:h265\n");
         }
     }
     CHECK_RETURN_IF(aimap.count("channel_id") <= 0);
@@ -205,18 +205,22 @@ HIAI_StatusT StreamPuller::Init(const hiai::AIConfig& config, const std::vector<
     if (aimap.count("stream_name")) {
         streamName = aimap["stream_name"];
     }
-
+    printf("StreamPuller Init start done\n");
     return HIAI_OK;
 }
 
 HIAI_IMPL_ENGINE_PROCESS("StreamPuller", StreamPuller, RP_INPUT_SIZE)
 {
-    if (nullptr != arg0) {
-        shared_ptr<string> inputArg = std::static_pointer_cast<string>(arg0);
-        if (!inputArg->empty()) {
-            streamName = *inputArg;
-        }
-        startStream(streamName);
-    }
+    shared_ptr<std::string> inputArg = std::static_pointer_cast<std::string>(arg0);
+    std::cout << "StreamPuller:" << *inputArg << std::endl;
+    std::shared_ptr<std::string> output = std::make_shared<std::string>("StreamPuller");
+    HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(output));
+//    if (nullptr != arg0) {
+//        shared_ptr<string> inputArg = std::static_pointer_cast<string>(arg0);
+//        if (!inputArg->empty()) {
+//            streamName = *inputArg;
+//        }
+//        startStream(streamName);
+//    }
     return HIAI_OK;
 }
