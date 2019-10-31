@@ -49,102 +49,97 @@ using std::vector;
 HIAI_StatusT SSDDetection::Init(const hiai::AIConfig& config,
     const std::vector<hiai::AIModelDescription>& model_desc)
 {
-//    printf("[SSDDetection] start init!\n");
-//    HIAI_StatusT ret = HIAI_OK;
-//    if (nullptr == modelManager) {
-//        modelManager = std::make_shared<hiai::AIModelManager>();
-//    }
-//    hiai::AIModelDescription modelDesc;
-//    loadModelDescription(config, modelDesc);
-//    // init ai model manager
-//    ret = modelManager->Init(config, { modelDesc });
-//    if (hiai::SUCCESS != ret) {
-//        printf("[SSDDetection] ai model manager init failed!\n");
-//        return HIAI_ERROR;
-//    }
-//    // input/output buffer allocation
-//    std::vector<hiai::TensorDimension> inputTensorDims;
-//    std::vector<hiai::TensorDimension> outputTensorDims;
-//    ret = modelManager->GetModelIOTensorDim(modelDesc.name(), inputTensorDims, outputTensorDims);
-//    if (ret != hiai::SUCCESS) {
-//        printf("[SSDDetection] hiai ai model manager init failed.\n");
-//        return HIAI_ERROR;
-//    }
-//    for (auto& dims : inputTensorDims) {
-//        logDumpDims(dims);
-//    }
-//    for (auto& dims : outputTensorDims) {
-//        logDumpDims(dims);
-//    }
-//    // input dims
-//    if (1 != inputTensorDims.size()) {
-//        printf("[SSDDetection] inputTensorDims.size() != 1 (%d vs. %d)\n",
-//            inputTensorDims.size(), 1);
-//        return HIAI_ERROR;
-//    }
+    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] start init!");
+    HIAI_StatusT ret = HIAI_OK;
+    if (nullptr == modelManager) {
+        modelManager = std::make_shared<hiai::AIModelManager>();
+    }
+    hiai::AIModelDescription modelDesc;
+    loadModelDescription(config, modelDesc);
+    // init ai model manager
+    ret = modelManager->Init(config, { modelDesc });
+    if (hiai::SUCCESS != ret) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] ai model manager init failed!");
+        return HIAI_ERROR;
+    }
+    // input/output buffer allocation
+    std::vector<hiai::TensorDimension> inputTensorDims;
+    std::vector<hiai::TensorDimension> outputTensorDims;
+    ret = modelManager->GetModelIOTensorDim(modelDesc.name(), inputTensorDims, outputTensorDims);
+    if (ret != hiai::SUCCESS) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] hiai ai model manager init failed.");
+        return HIAI_ERROR;
+    }
+    for (auto& dims : inputTensorDims) {
+        logDumpDims(dims);
+    }
+    for (auto& dims : outputTensorDims) {
+        logDumpDims(dims);
+    }
+    // input dims
+    if (1 != inputTensorDims.size()) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] inputTensorDims.size() != 1 (%d vs. %d)",
+            inputTensorDims.size(), 1);
+        return HIAI_ERROR;
+    }
 
-//    kBatchSize = inputTensorDims[0].n;
-//    kChannel = inputTensorDims[0].c;
-//    kHeight = inputTensorDims[0].h;
-//    kWidth = inputTensorDims[0].w;
-//    kInputSize = inputTensorDims[0].size;
-//    kAlignedWidth = ALIGN_UP(kWidth, DVPP_STRIDE_WIDTH);
-//    kAlignedHeight = ALIGN_UP(kHeight, DVPP_STRIDE_HEIGHT);
-//    ret = creatIOTensors(modelManager, inputTensorDims, inputTensorVec, inputDataBuffer);
-//    if (HIAI_OK != ret) {
-//        printf("[SSDDetection] creat input tensors failed!\n");
-//        return HIAI_ERROR;
-//    }
-//    ret = creatIOTensors(modelManager, outputTensorDims, outputTensorVec, outputDataBuffer);
-//    if (HIAI_OK != ret) {
-//        printf("[SSDDetection] creat output tensors failed!\n");
-//        return HIAI_ERROR;
-//    }
-//    printf("[SSDDetection] end init!\n");
+    kBatchSize = inputTensorDims[0].n;
+    kChannel = inputTensorDims[0].c;
+    kHeight = inputTensorDims[0].h;
+    kWidth = inputTensorDims[0].w;
+    kInputSize = inputTensorDims[0].size;
+    kAlignedWidth = ALIGN_UP(kWidth, DVPP_STRIDE_WIDTH);
+    kAlignedHeight = ALIGN_UP(kHeight, DVPP_STRIDE_HEIGHT);
+    ret = creatIOTensors(modelManager, inputTensorDims, inputTensorVec, inputDataBuffer);
+    if (HIAI_OK != ret) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] creat input tensors failed!");
+        return HIAI_ERROR;
+    }
+    ret = creatIOTensors(modelManager, outputTensorDims, outputTensorVec, outputDataBuffer);
+    if (HIAI_OK != ret) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] creat output tensors failed!");
+        return HIAI_ERROR;
+    }
+    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] end init!");
     return HIAI_OK;
 }
 
 HIAI_IMPL_ENGINE_PROCESS("SSDDetection", SSDDetection, DT_INPUT_SIZE)
 {
-//    HIAI_StatusT ret = HIAI_OK;
-//    std::shared_ptr<DeviceStreamData> inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
-//    if (nullptr == inputArg) {
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "Fail to process invalid message");
-//        return HIAI_ERROR;
-//    }
-
-//    inputArgQueue.push_back(std::move(inputArg));
-//    // waiting for batch data
-//    if (inputArgQueue.size() < kBatchSize) {
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR,
-//            "Collecting batch data, in queue, current size %d", inputArgQueue.size());
-//        return HIAI_OK;
-//    }
-//    // resize yuv data to input size
-//    uint8_t* dataBufferPtr = inputDataBuffer[0].get();
-//    for (int i = 0; i < inputArgQueue.size(); i++) {
-//        inputArg = inputArgQueue[i];
-//        char outFilename[128];
-//        time_pair vpcStamps;
-//        vpcResize(inputArg->imgOrigin.buf.data.get(), inputArg->imgOrigin.width, inputArg->imgOrigin.height,
-//            dataBufferPtr, kWidth, kHeight);
-//        dataBufferPtr += kInputSize;
-//    }
-//    // inference
-//    hiai::AIContext aiContext;
-//    time_pair process;
-//    ret = modelManager->Process(aiContext, inputTensorVec, outputTensorVec, 0);
-//    if (hiai::SUCCESS != ret) {
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "AI Model Manager Process failed");
-//        return HIAI_ERROR;
-//    }
-
-//    postProcessDetection();
-//    inputArgQueue.clear();
-    if(arg0 != nullptr){
-        std::shared_ptr<std::string> outputData = std::make_shared<std::string>("SSDDetection");
-        HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(outputData));
+    HIAI_StatusT ret = HIAI_OK;
+    std::shared_ptr<DeviceStreamData> inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
+    if (nullptr == inputArg) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "Fail to process invalid message");
+        return HIAI_ERROR;
     }
+
+    inputArgQueue.push_back(std::move(inputArg));
+    // waiting for batch data
+    if (inputArgQueue.size() < kBatchSize) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR,
+            "Collecting batch data, in queue, current size %d", inputArgQueue.size());
+        return HIAI_OK;
+    }
+    // resize yuv data to input size
+    uint8_t* dataBufferPtr = inputDataBuffer[0].get();
+    for (int i = 0; i < inputArgQueue.size(); i++) {
+        inputArg = inputArgQueue[i];
+        char outFilename[128];
+        time_pair vpcStamps;
+        vpcResize(inputArg->imgOrigin.buf.data.get(), inputArg->imgOrigin.width, inputArg->imgOrigin.height, dataBufferPtr, kWidth, kHeight);
+        dataBufferPtr += kInputSize;
+    }
+    // inference
+    hiai::AIContext aiContext;
+    time_pair process;
+    ret = modelManager->Process(aiContext, inputTensorVec, outputTensorVec, 0);
+    if (hiai::SUCCESS != ret) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "AI Model Manager Process failed");
+        return HIAI_ERROR;
+    }
+
+    postProcessDetection();
+    inputArgQueue.clear();
 
     return HIAI_OK;
 }
@@ -157,7 +152,7 @@ HIAI_StatusT SSDDetection::postProcessDetection()
     shared_ptr<hiai::AINeuralNetworkBuffer> tensorResults = std::static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensorVec[0]);
     shared_ptr<hiai::AINeuralNetworkBuffer> tensorObjNum = std::static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensorVec[1]);
     int objNum = (int)(*(float*)tensorObjNum->GetBuffer());
-    const float thresh = 0.5;
+    const float thresh = 0.2;
     const int colSize = 7;
     int validFaceCount = 0;
     float* resPtr = (float*)tensorResults->GetBuffer();

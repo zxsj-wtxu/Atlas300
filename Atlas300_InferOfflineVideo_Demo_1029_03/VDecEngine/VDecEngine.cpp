@@ -44,13 +44,10 @@ typedef struct stat Stat;
 
 HIAI_StatusT VDecEngine::Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc)
 {
-    printf("[VDecEngine] init start.\n");
-
     HIAI_ENGINE_LOG(this, HIAI_OK, "[VDecEngine] init start.");
     if (NULL == pVdecHandle) {
         int ret = CreateVdecApi(pVdecHandle, 0);
         if (0 != ret || NULL == pVdecHandle) {
-            printf("pVdecHandle is null.\n");
             HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "pVdecHandle is null.");
             return HIAI_ERROR;
         }
@@ -58,13 +55,11 @@ HIAI_StatusT VDecEngine::Init(const hiai::AIConfig& config, const std::vector<hi
     if (NULL == pDvppHandle) {
         int ret = CreateDvppApi(pDvppHandle);
         if (0 != ret || NULL == pDvppHandle) {
-            printf("pDvppHandle is null.\n");
             HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "pDvppHandle is null.");
         }
     }
     vdecInMsg.call_back = VDecEngine::frameCallback;
     HIAI_ENGINE_LOG(this, HIAI_OK, "[VDecEngine] init is finished.");
-    printf("[VDecEngine] init is finished.\n");
     return HIAI_OK;
 }
 
@@ -169,34 +164,32 @@ void VDecEngine::frameCallback(FRAME* frame, void* hiai_data)
 
 HIAI_IMPL_ENGINE_PROCESS("VDecEngine", VDecEngine, VD_INPUT_SIZE)
 {
-//    std::shared_ptr<StreamRawData> inputArg = std::static_pointer_cast<StreamRawData>(arg0);
+    std::shared_ptr<StreamRawData> inputArg = std::static_pointer_cast<StreamRawData>(arg0);
     // if use hiai
-//    vdecInMsg.hiai_data = this;
-//    inputInfo = inputArg->info;
-//    vdecInMsg.channelId = inputArg->info.channelId;
-//    if (inputArg->info.isEOS == 1) {
-//        vdecInMsg.isEOS = 1;
-//    } else {
-//        if (inputArg->info.format == H264) {
-//            memcpy_s(vdecInMsg.video_format, 10, "h264", 4);
-//        } else {
-//            memcpy_s(vdecInMsg.video_format, 10, "h265", 4);
-//        }
-//        vdecInMsg.in_buffer_size = inputArg->buf.len_of_byte;
-//        vdecInMsg.in_buffer = (char*)inputArg->buf.data.get();
-//        vdecInMsg.isEOS = 0;
-//        //        memcpy_s(vdecInMsg.image_format, 10, "nv12", 4);
-//    }
-//    dvppapi_ctl_msg MSG;
-//    MSG.in_size = sizeof(vdec_in_msg);
-//    MSG.in = (void*)&(vdecInMsg);
-//    int ret = VdecCtl(pVdecHandle, DVPP_CTL_VDEC_PROC, &MSG, 0);
-//    if (0 != ret) {
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[VDecEngine] DVPP_CTL_VDEC_PROC failed! ret = %d", ret);
-//        return HIAI_ERROR;
-//    }
-    std::shared_ptr<std::string> out = std::make_shared<std::string>("VdecEngine");
-    HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(out));
+    vdecInMsg.hiai_data = this;
+    inputInfo = inputArg->info;
+    vdecInMsg.channelId = inputArg->info.channelId;
+    if (inputArg->info.isEOS == 1) {
+        vdecInMsg.isEOS = 1;
+    } else {
+        if (inputArg->info.format == H264) {
+            memcpy_s(vdecInMsg.video_format, 10, "h264", 4);
+        } else {
+            memcpy_s(vdecInMsg.video_format, 10, "h265", 4);
+        }
+        vdecInMsg.in_buffer_size = inputArg->buf.len_of_byte;
+        vdecInMsg.in_buffer = (char*)inputArg->buf.data.get();
+        vdecInMsg.isEOS = 0;
+        //        memcpy_s(vdecInMsg.image_format, 10, "nv12", 4);
+    }
+    dvppapi_ctl_msg MSG;
+    MSG.in_size = sizeof(vdec_in_msg);
+    MSG.in = (void*)&(vdecInMsg);
+    int ret = VdecCtl(pVdecHandle, DVPP_CTL_VDEC_PROC, &MSG, 0);
+    if (0 != ret) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[VDecEngine] DVPP_CTL_VDEC_PROC failed! ret = %d", ret);
+        return HIAI_ERROR;
+    }
 
     return HIAI_OK;
 }

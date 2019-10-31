@@ -55,7 +55,6 @@ void MkdirP(const std::string& outdir)
 }
 
 HIAI_StatusT DstEngine::Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc) {
-    printf("DstEngine Init start.\n");
     auto aimap = kvmap(config);
     if (aimap.count("labelPath")) {
         labelPath = aimap["labelPath"];
@@ -93,7 +92,7 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
         return HIAI_ERROR;
     }
 
-    printf("[DstEngine]: The process result of frame %lu:\n", inputArg->info.frameId);
+//    printf("[DstEngine]: The process result of frame %lu:\n", inputArg->info.frameId);
     // save the detection result
     int i=0;
     for (const auto& det : inputArg->detectResult) {
@@ -107,8 +106,8 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
                 std::getline(in, s);
         }
         std::getline(in, s);
-        printf("detect object %d: \n", i++);
-        printf("classname: %s score: %f\n", s.c_str(), score);
+//        printf("detect object %d: \n", i++);
+//        printf("classname: %s score: %f\n", s.c_str(), score);
 
         if (tfile.is_open()){
             tfile << s  << " score: " << score << endl;
@@ -116,59 +115,55 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
             HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "video_output: failed to open txt result file.");
         }
 
-        printf("object id: %d score: %f \n", det.classId, det.confidence);
-        printf("the object regin:  x1: %d y1: %d x2: %d y2: %d\n",
-               det.location.anchor_lt.x,
-               det.location.anchor_lt.y,
-               det.location.anchor_rb.x,
-               det.location.anchor_rb.y);
+//        printf("object id: %d score: %f \n", det.classId, det.confidence);
+//        printf("the object regin:  x1: %d y1: %d x2: %d y2: %d\n", \
+               det.location.anchor_lt.x, \
+               det.location.anchor_lt.y, \
+               det.location.anchor_rb.x, \
+               det.location.anchor_rb.y); \
 
         tfile << " class: " <<  det.classId  << " score: " <<  det.confidence << endl;
         tfile << " x1: " << det.location.anchor_lt.x  << " y1: "<< det.location.anchor_lt.y
         << " x2: " <<  det.location.anchor_rb.x << " y2: "<< det.location.anchor_rb.y <<endl;
     }
-    printf("[DstEngine]: End of result info.\n");
-    printf("\n");
+//    printf("[DstEngine]: End of result info.\n");
+//    printf("\n");
     tfile.close();
     return HIAI_OK;
 }
 HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
 {
 //    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] start process!");
-//    if (arg0 == nullptr){
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  The input arg0 is nullptr");
-//        return HIAI_ERROR;
-//    }
-//    auto inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
+    if (arg0 == nullptr){
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  The input arg0 is nullptr");
+        return HIAI_ERROR;
+    }
+    auto inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
 
-//    // if it is the end of stream, send end signal to main
-//   if(inputArg->info.isEOS){
-//        std::shared_ptr<std::string> result_data(new std::string);
-//        hiai::Engine::SendData(0, "string", std::static_pointer_cast<void>(result_data));
-//        return HIAI_OK;
-//   }
+    // if it is the end of stream, send end signal to main
+   if(inputArg->info.isEOS){
+        std::shared_ptr<std::string> result_data(new std::string);
+        hiai::Engine::SendData(0, "string", std::static_pointer_cast<void>(result_data));
+        return HIAI_OK;
+   }
 
-//   // create directory for saving result info
-//    MkdirP(RESULT_FOLDER);
-//    string resultFile = RESULT_FOLDER + FILE_PRE_FIX + to_string(getCurentTime());
-//    string resultFileTxt = resultFile + ".txt";
-//    string resultFileJpg = resultFile + ".jpg";
+   // create directory for saving result info
+    MkdirP(RESULT_FOLDER);
+    string resultFile = RESULT_FOLDER + FILE_PRE_FIX + to_string(getCurentTime());
+    string resultFileTxt = resultFile + ".txt";
+    string resultFileJpg = resultFile + ".jpg";
 
-//    // save the result information in file named resultFileTxt
-//    if(ProcessResult(resultFileTxt, inputArg) != HIAI_OK){
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  process result failed");
-//        return HIAI_ERROR;
-//    }
+    // save the result information in file named resultFileTxt
+    if(ProcessResult(resultFileTxt, inputArg) != HIAI_OK){
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  process result failed");
+        return HIAI_ERROR;
+    }
 
     // save the result jpg file named resultFileJpg
-//    if(SaveJpg(resultFileJpg,inputArg) != HIAI_OK){
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  save jpg file failed");
-//        return HIAI_ERROR;
-//    }
-    std::shared_ptr<std::string> inputArg = std::static_pointer_cast<std::string>(arg0);
-    std::cout << "DstEngine:" << *inputArg <<std::endl;
-    std::shared_ptr<std::string> outputData = std::make_shared<std::string>("DstEngine");
-    HIAI_StatusT ret = SendData(0, "string", std::static_pointer_cast<void>(outputData));
-    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] end process!");
+    if(SaveJpg(resultFileJpg,inputArg) != HIAI_OK){
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  save jpg file failed");
+        return HIAI_ERROR;
+    }
+//    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] end process!");
     return HIAI_OK;
 }

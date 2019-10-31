@@ -36,7 +36,8 @@
 #include <iostream>
 #include <libgen.h>
 #include <unistd.h>
-
+#include <sys/timeb.h>
+#include <time.h>
 static const std::string GRAPH_FILENAME = "./graph.config";
 // graph id
 static const uint32_t GRAPH_ID = 100;
@@ -64,8 +65,7 @@ HIAI_StatusT HIAI_InitAndStartGraph(const std::string& configFile)
     // Step2: Create and Start the Graph
     status = hiai::Graph::CreateGraph(configFile);
     if (status != HIAI_OK) {
-	
-        printf("Fail to start graph\n");
+        HIAI_ENGINE_LOG(status, "Fail to start graph");
         return status;
     }
 
@@ -81,7 +81,8 @@ HIAI_StatusT HIAI_InitAndStartGraph(const std::string& configFile)
         target_port_config.graph_id = GRAPH_ID;
         target_port_config.engine_id = terminators[i];
         target_port_config.port_id = 0;
-        graph->SetDataRecvFunctor(target_port_config, std::make_shared<CustomDataRecvInterface>(""));
+        graph->SetDataRecvFunctor(target_port_config,
+            std::make_shared<CustomDataRecvInterface>(""));
     }
     return HIAI_OK;
 }
@@ -95,6 +96,19 @@ void my_handler(int s)
         exit(0);
     }
 }
+char*   log_Time(void)
+{
+        struct  tm      *ptm;
+        struct  timeb   stTimeb;
+        static  char    szTime[19];
+
+        ftime(&stTimeb);
+        ptm = localtime(&stTimeb.time);
+        sprintf(szTime, "%02d-%02d %02d:%02d:%02d.%03d",
+                ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, stTimeb.millitm);
+        szTime[18] = 0;
+        return szTime;
+}
 
 int main(int argc, char* argv[])
 {
@@ -102,7 +116,6 @@ int main(int argc, char* argv[])
     char* dirc = strdup(argv[0]);
     if (dirc != NULL) {
         char* dname = ::dirname(dirc);
-	printf("dname:%s\n", dname);;
         int r = chdir(dname);
         if (r != 0) {
             printf("chdir error code %d\n", r);
@@ -115,11 +128,9 @@ int main(int argc, char* argv[])
     HIAI_StatusT ret = HIAI_InitAndStartGraph(GRAPH_FILENAME);
     if (ret != HIAI_OK) {
         printf("[main] Fail to start graph\n");
-	std::cout << GRAPH_FILENAME<<std::endl;
         return -1;
     }
 
-    printf("start graph finished.\n");
     // send data
     std::shared_ptr<hiai::Graph> graph = hiai::Graph::GetInstance(GRAPH_ID);
     if (nullptr == graph) {
@@ -130,10 +141,9 @@ int main(int argc, char* argv[])
     engine_id.graph_id = GRAPH_ID;
     engine_id.engine_id = SRC_ENGINE;
     engine_id.port_id = 0;
-    std::shared_ptr<std::string> src_data = std::make_shared<std::string>("main");
+    std::shared_ptr<std::string> src_data(new std::string());
 
     graph->SendData(engine_id, "string", std::static_pointer_cast<void>(src_data));
-    printf("SendData.\n");
 
     // wait for ctrl+c
     struct sigaction sigIntHandler;
@@ -141,11 +151,11 @@ int main(int argc, char* argv[])
     sigemptyset(&sigIntHandler.sa_mask);
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
-
+    printf("start:[%s]\n", log_Time());
     while (g_flag > 0) {
         usleep(10000);
     }
-
+    printf("end:[%s]\n", log_Time());
     // end
     hiai::Graph::DestroyGraph(GRAPH_ID);
     printf("[main] destroy graph-%u done\n", GRAPH_ID);
