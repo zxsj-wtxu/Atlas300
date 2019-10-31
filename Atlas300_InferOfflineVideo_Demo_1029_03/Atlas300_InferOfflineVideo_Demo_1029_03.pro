@@ -73,4 +73,8 @@ HEADERS += \
     VDecEngine/VDecEngine.h
 
 DISTFILES += \
-    graph.config
+    graph.config \
+    data/models/Resnet18.om \
+    data/models/vgg_ssd_300x300.om \
+    data/misc/imagenet1000_clsidx_to_labels.txt \
+    graph.config.test.h264

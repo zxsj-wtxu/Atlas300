@@ -14,7 +14,7 @@ graphs {
       }
       items {
         name: "stream_name"
-        value: "rtsp://192.168.0.218:5555/live/0"
+        value: "/home/HwHiAiUser/test.h264"
       }
     }
   }
