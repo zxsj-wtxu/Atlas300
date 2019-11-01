@@ -156,6 +156,10 @@ void StreamPuller::pullStreamDataLoop()
     output->info.format = format;
     output->info.isEOS = 1;
     HIAI_StatusT ret = SendData(0, "StreamRawData", std::static_pointer_cast<void>(output));
+    if (HIAI_OK != ret) {
+        printf("VDecEngine senddata failed! ret = %d\n", ret);
+        return;
+    }
     printf("channel %d pullStreamDataLoop end of stream\n", channelId);
     av_init_packet(&pkt);
     stop = 1;

@@ -32,6 +32,7 @@
  */
 #include "DataRecv.h"
 #include "hiaiengine/api.h"
+#include "DynamicGraph.h"
 #include <atomic>
 #include <iostream>
 #include <libgen.h>
@@ -47,6 +48,10 @@ static const uint32_t SRC_ENGINE = 101;
 static const uint32_t terminators[] = { 106 };
 // flag to guard eos signal
 static std::atomic<int> g_flag = { 1 };
+// sleep time
+static const uint32_t USLEEP_TIME = 100000;
+// device id
+static const uint32_t DEVICE_ID = 0;
 
 HIAI_StatusT CustomDataRecvInterface::RecvData(const std::shared_ptr<void>& message)
 {
@@ -110,6 +115,83 @@ char*   log_Time(void)
         return szTime;
 }
 
+HIAI_StatusT CreateDynamicGraphs(uint32_t num, dg::DynamicGraph& graphs, std::vector<dg::NodeInfo>& inputNodes,
+    std::vector<dg::NodeInfo>& outputNodes)
+{
+    // init id number
+    int id = 100;
+    // create graphs dynamically instead of using graph.config file
+    for (int i = 0; i < num; i++) {
+        dg::graph g(id++, DEVICE_ID);
+        dg::engine e0("StreamPuller", id++, 1, dg::engine::HOST);
+        e0.so_name.push_back("./libStreamPuller.so");
+        {
+            dg::AIConfigItem item;
+            item.name = "channel_id";
+            item.value= std::to_string(0);
+            e0.ai_config.items.push_back(item);
+        }
+        {
+            dg::AIConfigItem item;
+            item.name = "stream_name";
+            item.value= "/home/HwHiAiUser/test.h264";
+            e0.ai_config.items.push_back(item);
+        }
+
+        dg::engine e1("VDecEngine", id++, 1, dg::engine::DEVICE);
+        e1.so_name.push_back("libVDecEngine.so");
+
+        dg::engine e2("SSDDetection", id++, 1, dg::engine::DEVICE);
+        e2.so_name.push_back("libSSDDetection.so");
+        {
+            dg::AIConfigItem item;
+            item.name = "model";
+            item.value= "../data/models/vgg_ssd_300x300.om";
+            e2.ai_config.items.push_back(item);
+        }
+
+        dg::engine e3("JpegEncode", id++, 1, dg::engine::DEVICE);
+        e3.so_name.push_back("libJpegEncode.so");
+        {
+            dg::AIConfigItem item;
+            item.name = "init_config";
+            item.value= "";
+            e3.ai_config.items.push_back(item);
+        }
+        {
+            dg::AIConfigItem item;
+            item.name = "passcode";
+            item.value= "";
+            e3.ai_config.items.push_back(item);
+        }
+
+        dg::engine e4("DstEngine", id++, 1, dg::engine::HOST);
+        e4.so_name.push_back("libDstEngine.so");
+        {
+            dg::AIConfigItem item;
+            item.name = "labelPath";
+            item.value= "./imagenet1000_clsidx_to_labels.txt";
+            e4.ai_config.items.push_back(item);
+        }
+
+        inputNodes.push_back(std::make_tuple(g, e0, 0));
+        outputNodes.push_back(std::make_tuple(g, e4, 0));
+        g.addEngine(e0);
+        g.addEngine(e1);
+        g.addEngine(e2);
+        g.addEngine(e3);
+        g.addEngine(e4);
+
+        g.addConnection(dg::connection(e0, 0, e1, 0));
+        g.addConnection(dg::connection(e1, 0, e2, 0));
+        g.addConnection(dg::connection(e2, 0, e3, 0));
+        g.addConnection(dg::connection(e3, 0, e4, 0));
+
+        graphs.addGraph(g);
+    }
+    return HIAI_OK;
+}
+
 int main(int argc, char* argv[])
 {
     // cd to directory of main
@@ -123,28 +205,56 @@ int main(int argc, char* argv[])
         }
         free(dirc);
     }
+    dg::DynamicGraph graphs;
+    std::vector<dg::NodeInfo> inputNodes;
+    std::vector<dg::NodeInfo> outputNodes;
+    HIAI_StatusT ret;
+    ret = CreateDynamicGraphs(1, graphs, inputNodes, outputNodes);
+    if (ret != HIAI_OK) {
+        printf("CreateDynamicGraphs failed %d\n", ret);
+        return -1;
+    }
+    ret = graphs.createGraph();
+    if (ret != HIAI_OK) {
+        printf("createGraph failed %d\n", ret);
+        return -1;
+    }
+    for (const auto& node : outputNodes) {
+        ret = graphs.setDataRecvFunctor(node, std::make_shared<CustomDataRecvInterface>(""));
+        if (ret != HIAI_OK) {
+            printf("setDataRecvFunctor failed %d\n", ret);
+            return -1;
+        }
+    }
+    // send from main to graph
+    for (const auto& node : inputNodes) {
+        ret = graphs.sendData(node, "string", std::make_shared<std::string>());
+        if (ret != HIAI_OK) {
+            printf("sendData failed %d\n", ret);
+            return -1;
+        }
+    }
 
     // init Graph
-    HIAI_StatusT ret = HIAI_InitAndStartGraph(GRAPH_FILENAME);
-    if (ret != HIAI_OK) {
-        printf("[main] Fail to start graph\n");
-        return -1;
-    }
+//    HIAI_StatusT ret = HIAI_InitAndStartGraph(GRAPH_FILENAME);
+//    if (ret != HIAI_OK) {
+//        printf("[main] Fail to start graph\n");
+//        return -1;
+//    }
 
     // send data
-    std::shared_ptr<hiai::Graph> graph = hiai::Graph::GetInstance(GRAPH_ID);
-    if (nullptr == graph) {
-        printf("Fail to get the graph-%u\n", GRAPH_ID);
-        return -1;
-    }
-    hiai::EnginePortID engine_id;
-    engine_id.graph_id = GRAPH_ID;
-    engine_id.engine_id = SRC_ENGINE;
-    engine_id.port_id = 0;
-    std::shared_ptr<std::string> src_data(new std::string());
+//    std::shared_ptr<hiai::Graph> graph = hiai::Graph::GetInstance(GRAPH_ID);
+//    if (nullptr == graph) {
+//        printf("Fail to get the graph-%u\n", GRAPH_ID);
+//        return -1;
+//    }
+//    hiai::EnginePortID engine_id;
+//    engine_id.graph_id = GRAPH_ID;
+//    engine_id.engine_id = SRC_ENGINE;
+//    engine_id.port_id = 0;
+//    std::shared_ptr<std::string> src_data(new std::string());
 
-    graph->SendData(engine_id, "string", std::static_pointer_cast<void>(src_data));
-
+//    graph->SendData(engine_id, "string", std::static_pointer_cast<void>(src_data));
     // wait for ctrl+c
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = my_handler;
@@ -156,8 +266,9 @@ int main(int argc, char* argv[])
         usleep(10000);
     }
     printf("end:[%s]\n", log_Time());
-    // end
-    hiai::Graph::DestroyGraph(GRAPH_ID);
     printf("[main] destroy graph-%u done\n", GRAPH_ID);
+//    hiai::Graph::DestroyGraph(GRAPH_ID);
+    graphs.destroyGraph();
+
     return 0;
 }

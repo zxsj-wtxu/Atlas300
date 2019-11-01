@@ -67,68 +67,46 @@ HIAI_StatusT DstEngine::Init(const hiai::AIConfig& config, const std::vector<hia
 HIAI_StatusT DstEngine::SaveJpg(const std::string& resultFileJpg, const std::shared_ptr<DeviceStreamData>& inputArg)
 {
     void *ptr = (void *)(inputArg->imgOrigin.buf.data.get());
+    unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
 
-    FILE *fp = fopen(resultFileJpg.c_str(), "wb");
-    if (NULL == fp) {
-        HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[SaveFile] Save file engine: open file fail!");
-        return HIAI_ERROR;
-    } else {
-        fwrite(ptr, 1, inputArg->imgOrigin.buf.len_of_byte, fp);
-        fflush(fp);
-        fclose(fp);
-    }
+    vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
+    cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
+    cv::imwrite(resultFileJpg, image);
+
+//    FILE *fp = fopen(resultFileJpg.c_str(), "wb");
+//    if (NULL == fp) {
+//        HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[SaveFile] Save file engine: open file fail!");
+//        return HIAI_ERROR;
+//    } else {
+//        fwrite(ptr, 1, inputArg->imgOrigin.buf.len_of_byte, fp);
+//        fflush(fp);
+//        fclose(fp);
+//    }
     return HIAI_OK;
 }
 
 HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const std::shared_ptr<DeviceStreamData>& inputArg)
 {
-    std::ofstream tfile(resultFileTxt);
-
-    std::ifstream in;
-    in.open(labelPath, ios_base::in);
-
-    if (in.fail()) {
-        printf("[DstEngine]: Open labelfile %s failed, skip\n", labelPath.c_str());
-        return HIAI_ERROR;
-    }
-
-//    printf("[DstEngine]: The process result of frame %lu:\n", inputArg->info.frameId);
-    // save the detection result
+    string resultFile = RESULT_FOLDER + FILE_PRE_FIX + to_string(imageid++);
+    string resultFileJpg = resultFile + ".jpg";
+    unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
+    vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
+    cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
     int i=0;
+    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "detectResult size:%d", inputArg->detectResult.size());
     for (const auto& det : inputArg->detectResult) {
-        // get the output data
-        // gat the index of target label
         int argmax = det.classifyResult.classIndex;
         float score = det.classifyResult.confidence;
-        std::string s;
-        s.reserve(MAX_CHAR_LENGTH);
-        for (int i = 0; i < argmax; ++i){
-                std::getline(in, s);
-        }
-        std::getline(in, s);
-//        printf("detect object %d: \n", i++);
-//        printf("classname: %s score: %f\n", s.c_str(), score);
-
-        if (tfile.is_open()){
-            tfile << s  << " score: " << score << endl;
-        }else {
-            HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "video_output: failed to open txt result file.");
-        }
-
-//        printf("object id: %d score: %f \n", det.classId, det.confidence);
-//        printf("the object regin:  x1: %d y1: %d x2: %d y2: %d\n", \
-               det.location.anchor_lt.x, \
-               det.location.anchor_lt.y, \
-               det.location.anchor_rb.x, \
-               det.location.anchor_rb.y); \
-
-        tfile << " class: " <<  det.classId  << " score: " <<  det.confidence << endl;
-        tfile << " x1: " << det.location.anchor_lt.x  << " y1: "<< det.location.anchor_lt.y
-        << " x2: " <<  det.location.anchor_rb.x << " y2: "<< det.location.anchor_rb.y <<endl;
+        int obj_classId = det.classId;
+        float obj_confidence = det.confidence;
+        int xmin, ymin, xmax, ymax;
+        xmin = det.location.anchor_lt.x;
+        ymin = det.location.anchor_lt.y;
+        xmax = det.location.anchor_rb.x;
+        ymax = det.location.anchor_rb.y;
+        cv::rectangle(image, cv::Point(xmin, ymin), cv::Point(xmax, ymax), cv::Scalar(0, 0, 255), 2);
     }
-//    printf("[DstEngine]: End of result info.\n");
-//    printf("\n");
-    tfile.close();
+    cv::imwrite(resultFileJpg, image);
     return HIAI_OK;
 }
 HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
@@ -153,17 +131,20 @@ HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
     string resultFileTxt = resultFile + ".txt";
     string resultFileJpg = resultFile + ".jpg";
 
+//    printf("[DstEngine] end process, %d\n", count_id++);
     // save the result information in file named resultFileTxt
     if(ProcessResult(resultFileTxt, inputArg) != HIAI_OK){
+        printf("[DstEngine]  process result failed\n");
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  process result failed");
         return HIAI_ERROR;
     }
 
     // save the result jpg file named resultFileJpg
-    if(SaveJpg(resultFileJpg,inputArg) != HIAI_OK){
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  save jpg file failed");
-        return HIAI_ERROR;
-    }
+//    if(SaveJpg(resultFileJpg,inputArg) != HIAI_OK){
+//        printf("[DstEngine]  save jpg file failed\n");
+//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  save jpg file failed");
+//        return HIAI_ERROR;
+//    }
 //    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] end process!");
     return HIAI_OK;
 }

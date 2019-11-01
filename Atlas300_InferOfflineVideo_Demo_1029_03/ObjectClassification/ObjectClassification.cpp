@@ -113,30 +113,29 @@ HIAI_IMPL_ENGINE_PROCESS("ObjectClassification", ObjectClassification, CLASSIFIC
     if (arg0 != nullptr) {
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "ObjectClassification received frame data");
         auto inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "widthAligned %d heightAligned %d", inputArg->imgOrigin.widthAligned,
-                inputArg->imgOrigin.heightAligned);
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "widthAligned %d heightAligned %d", inputArg->imgOrigin.widthAligned, inputArg->imgOrigin.heightAligned);
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "width %d height %d", inputArg->imgOrigin.width, inputArg->imgOrigin.height);
 
         uint8_t* dataBufferPtr = inputDataBuffer[0].get();
 
 
         for (auto& det : inputArg->detectResult) {
+
              std::vector<DetectInfo> rect;
+             HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "class:%d ,confidence:%f, lt_x:%d, lt_y:%d", det.classId, det.confidence, det.location.anchor_lt.x, det.location.anchor_lt.y);
              rect.push_back(det);
             // crop and resize image by vpc
-             vpcCropResize(inputArg->imgOrigin.buf.data.get(), inputArg->imgOrigin.width, inputArg->imgOrigin.height,
-             dataBufferPtr, kWidth, kHeight, rect, INPUT_YUV420_SEMI_PLANNER_UV);
+             vpcCropResize(inputArg->imgOrigin.buf.data.get(), inputArg->imgOrigin.width, inputArg->imgOrigin.height, dataBufferPtr, kWidth, kHeight, rect, INPUT_YUV420_SEMI_PLANNER_UV);
 
-             hiai::AIContext aiContext;
-             ret = modelManager->Process(aiContext, inputTensorVec, outputTensorVec, 0);
-             if (hiai::SUCCESS != ret) {
-                  HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "AI Model Manager Process failed");
-                  return HIAI_ERROR;
-             }
+//             hiai::AIContext aiContext;
+//             ret = modelManager->Process(aiContext, inputTensorVec, outputTensorVec, 0);
+//             if (hiai::SUCCESS != ret) {
+//                  HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "AI Model Manager Process failed");
+//                  return HIAI_ERROR;
+//             }
 
-             //vector<OutputT> outputDataVec;
-             //vector<ClassifyResultT> classifyResult;
-             GetOutputResult(outputTensorVec,det);
+//             GetOutputResult(outputTensorVec,det);
+//             HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "class:%d ,confidence:%f, lt_x:%d, lt_y:%d", det.classId, det.confidence, det.location.anchor_lt.x, det.location.anchor_lt.y);
          }
 
         //  inputArg->classifyResult = classifyResult;

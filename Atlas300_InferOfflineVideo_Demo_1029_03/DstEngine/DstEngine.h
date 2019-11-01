@@ -39,7 +39,8 @@
 #include "Common.h"
 #include "stream_data.h"
 #include "AppCommon.h"
-
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui.hpp"
 #define DST_INPUT_SIZE 1
 #define DST_OUTPUT_SIZE 1
 
@@ -57,6 +58,7 @@ private:
     
     // label file path
     string labelPath;
+    int imageid = 0;
 };
 
 #endif

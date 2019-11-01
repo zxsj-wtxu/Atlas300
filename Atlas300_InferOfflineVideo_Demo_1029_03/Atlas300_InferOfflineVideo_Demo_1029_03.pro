@@ -12,6 +12,7 @@ SOURCES += main.cpp \
     StreamPuller/StreamPuller.cpp \
     VDecEngine/VDecEngine.cpp
 INCLUDEPATH+=$$PWD/Common
+INCLUDEPATH+=$$PWD/Common/DvppJpegEncode
 INCLUDEPATH+=$$PWD/include/
 INCLUDEPATH+=$$PWD/include/third_party/
 INCLUDEPATH+=$$PWD/include/libc_sec/include
