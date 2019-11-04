@@ -6,6 +6,8 @@ include_directories(${PROJECT_SRC_ROOT}/../Common/)
 include_directories(${DDK_OPENCV_INCLUDE_DIRS})
 aux_source_directory(${PROJECT_SRC_ROOT}/../Common/DvppJpegEncode DvppJpegEncode_SRC)
 
+message(${DDK_DEVICE_LIBRARIES})
+message(${DDK_DEVICE_OPENCV_LIBRARYS})
 aux_source_directory(${PROJECT_SRC_ROOT}/VDecEngine VDecEngine_SRC)
 add_library(VDecEngine SHARED ${VDecEngine_SRC})
 target_include_directories(VDecEngine PUBLIC ${PROJECT_SRC_ROOT}/VDecEngine)

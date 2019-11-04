@@ -87,8 +87,13 @@ HIAI_StatusT DstEngine::SaveJpg(const std::string& resultFileJpg, const std::sha
 
 HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const std::shared_ptr<DeviceStreamData>& inputArg)
 {
-    string resultFile = RESULT_FOLDER + FILE_PRE_FIX + to_string(imageid++);
+    uint32_t graph_cur_id = this->GetGraphId();
+    MkdirP(RESULT_FOLDER);
+    string res_folder = RESULT_FOLDER + to_string(graph_cur_id)+"/";
+    MkdirP(res_folder);
+    string resultFile = res_folder + FILE_PRE_FIX + to_string(getCurentTime());
     string resultFileJpg = resultFile + ".jpg";
+
     unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
     vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
     cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
@@ -124,27 +129,12 @@ HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
         hiai::Engine::SendData(0, "string", std::static_pointer_cast<void>(result_data));
         return HIAI_OK;
    }
+    string resultFileTxt;
 
-   // create directory for saving result info
-    MkdirP(RESULT_FOLDER);
-    string resultFile = RESULT_FOLDER + FILE_PRE_FIX + to_string(getCurentTime());
-    string resultFileTxt = resultFile + ".txt";
-    string resultFileJpg = resultFile + ".jpg";
-
-//    printf("[DstEngine] end process, %d\n", count_id++);
-    // save the result information in file named resultFileTxt
     if(ProcessResult(resultFileTxt, inputArg) != HIAI_OK){
         printf("[DstEngine]  process result failed\n");
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  process result failed");
         return HIAI_ERROR;
     }
-
-    // save the result jpg file named resultFileJpg
-//    if(SaveJpg(resultFileJpg,inputArg) != HIAI_OK){
-//        printf("[DstEngine]  save jpg file failed\n");
-//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  save jpg file failed");
-//        return HIAI_ERROR;
-//    }
-//    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] end process!");
     return HIAI_OK;
 }

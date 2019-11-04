@@ -106,8 +106,6 @@ void StreamPuller::pullStreamDataLoop()
         if (0 != ret) {
             printf("channel %d Read frame failed, continue!\n", channelId);
             break;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            continue;
         } else if (pkt.stream_index == videoIndex) {
             if (pkt.size <= 0) {
                 printf("channel %d Invalid pkt.size %d\n", channelId, pkt.size);

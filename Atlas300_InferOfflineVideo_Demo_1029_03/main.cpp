@@ -33,6 +33,8 @@
 #include "DataRecv.h"
 #include "hiaiengine/api.h"
 #include "DynamicGraph.h"
+#include "CommandLine.h"
+#include "CommandParser.h"
 #include <atomic>
 #include <iostream>
 #include <libgen.h>
@@ -52,6 +54,8 @@ static std::atomic<int> g_flag = { 1 };
 static const uint32_t USLEEP_TIME = 100000;
 // device id
 static const uint32_t DEVICE_ID = 0;
+
+dg::DynamicGraph graphs;
 
 HIAI_StatusT CustomDataRecvInterface::RecvData(const std::shared_ptr<void>& message)
 {
@@ -97,7 +101,7 @@ void my_handler(int s)
     printf("Caught signal %d\n", s);
     if (s == 2) {
         printf("DestroyGraph %u\n", GRAPH_ID);
-        hiai::Graph::DestroyGraph(GRAPH_ID);
+        graphs.destroyGraph();
         exit(0);
     }
 }
@@ -115,11 +119,10 @@ char*   log_Time(void)
         return szTime;
 }
 
-HIAI_StatusT CreateDynamicGraphs(uint32_t num, dg::DynamicGraph& graphs, std::vector<dg::NodeInfo>& inputNodes,
+HIAI_StatusT CreateDynamicGraphs(uint32_t num, int id, dg::DynamicGraph& graphs, std::vector<dg::NodeInfo>& inputNodes,
     std::vector<dg::NodeInfo>& outputNodes)
 {
     // init id number
-    int id = 100;
     // create graphs dynamically instead of using graph.config file
     for (int i = 0; i < num; i++) {
         dg::graph g(id++, DEVICE_ID);
@@ -128,7 +131,7 @@ HIAI_StatusT CreateDynamicGraphs(uint32_t num, dg::DynamicGraph& graphs, std::ve
         {
             dg::AIConfigItem item;
             item.name = "channel_id";
-            item.value= std::to_string(0);
+            item.value= std::to_string(i);
             e0.ai_config.items.push_back(item);
         }
         {
@@ -194,6 +197,30 @@ HIAI_StatusT CreateDynamicGraphs(uint32_t num, dg::DynamicGraph& graphs, std::ve
 
 int main(int argc, char* argv[])
 {
+    CommandParser options;
+    options
+        .addOption("-h")
+        .addOption("-g", "1")     //增加支持的参数选项
+        .addOption("-id", "100");      //增加支持的参数选项
+
+    options.parseArgs(argc, argv);  //将argv参数添加到vector容器中
+
+    bool help = options.cmdOptionExists("-h");  //从vector容器中查找是否输入了-h选项
+    int groups = parseStrToInt(options.cmdGetOption("-g"));
+    int id = parseStrToInt(options.cmdGetOption("-id"));
+
+    if (groups <= 0) {
+        printf("option -g should be greater than or equal to 1.\n");
+        showUsage();
+        return -1;
+    }
+
+    g_flag = groups;
+    if (help) {
+        showUsage();
+        return 0;
+    }
+
     // cd to directory of main
     char* dirc = strdup(argv[0]);
     if (dirc != NULL) {
@@ -205,11 +232,11 @@ int main(int argc, char* argv[])
         }
         free(dirc);
     }
-    dg::DynamicGraph graphs;
+
     std::vector<dg::NodeInfo> inputNodes;
     std::vector<dg::NodeInfo> outputNodes;
     HIAI_StatusT ret;
-    ret = CreateDynamicGraphs(1, graphs, inputNodes, outputNodes);
+    ret = CreateDynamicGraphs(groups, id, graphs, inputNodes, outputNodes);
     if (ret != HIAI_OK) {
         printf("CreateDynamicGraphs failed %d\n", ret);
         return -1;
@@ -235,26 +262,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    // init Graph
-//    HIAI_StatusT ret = HIAI_InitAndStartGraph(GRAPH_FILENAME);
-//    if (ret != HIAI_OK) {
-//        printf("[main] Fail to start graph\n");
-//        return -1;
-//    }
-
-    // send data
-//    std::shared_ptr<hiai::Graph> graph = hiai::Graph::GetInstance(GRAPH_ID);
-//    if (nullptr == graph) {
-//        printf("Fail to get the graph-%u\n", GRAPH_ID);
-//        return -1;
-//    }
-//    hiai::EnginePortID engine_id;
-//    engine_id.graph_id = GRAPH_ID;
-//    engine_id.engine_id = SRC_ENGINE;
-//    engine_id.port_id = 0;
-//    std::shared_ptr<std::string> src_data(new std::string());
-
-//    graph->SendData(engine_id, "string", std::static_pointer_cast<void>(src_data));
     // wait for ctrl+c
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = my_handler;
