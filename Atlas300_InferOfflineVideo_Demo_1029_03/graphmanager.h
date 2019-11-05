@@ -1,0 +1,4 @@
+#ifndef GRAPHMANAGER_H
+#define GRAPHMANAGER_H
+
+#endif // GRAPHMANAGER_H
