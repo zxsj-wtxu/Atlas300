@@ -1,0 +1,4 @@
+#ifndef BICYCLECOMMON_H
+#define BICYCLECOMMON_H
+
+#endif // BICYCLECOMMON_H
