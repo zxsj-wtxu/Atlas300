@@ -6,6 +6,7 @@
  */
 
 #include "WebServer.h"
+
 int WebServer::finished = 0;
 WebServer* WebServer::_this = NULL;
 pthread_mutex_t WebServer::mutex_this = PTHREAD_MUTEX_INITIALIZER;
@@ -186,12 +187,34 @@ void WebServer::RegisterJstMethod(MyString webapi, WebsJstProc fn){
 	websDefineJst(webapi.c_str(), fn);
 }
 
+int WebServer::myAspTtest(int eid, Webs *wp, int argc, char **argv)
+{
+    char	*name, *address;
+
+    printf("%d\n", argc);
+    for(int i=0; i<argc; i++){
+        printf("%s ", argv[i]);
+    }
+    printf("\n");
+
+    return (int) websWrite(wp, "hello asp test");
+}
+
+
+void WebServer::HandleTest(Webs *wp){
+    websSetStatus(wp, 200);
+    websWriteHeaders(wp, -1, 0);
+    websWriteEndHeaders(wp);
+    websWrite(wp, "HandleTest\n");
+    websDone(wp);
+}
+
 int WebServer::init(){
     int     argind;
     char buffer[1024] = {0};
 	char *p = getcwd(buffer , sizeof(buffer));
-    route = "route.txt";
-    auth = "auth.txt";
+    route = "config/goahead/route.txt";
+    auth = "config/goahead/auth.txt";
     char home[1024] = {0};
     char documents[1024] = {0};
     sprintf(home, "%s/%s",p,"config/goahead");
@@ -199,10 +222,6 @@ int WebServer::init(){
 
     char *endpoint = "0.0.0.0:8081";
 
-    if (chdir(home) < 0) {
-        error("Cannot change directory to %s", home);
-        exit(-1);
-    }
     logSetPath("stdout:2");
 
     initPlatform();
@@ -222,6 +241,8 @@ int WebServer::init(){
 
 	RegisterActionMethod("device", (void*)HandleDeviceInfoAction);
 	RegisterActionMethod("system", (void*)HandleSystemInfoAction);
+    RegisterActionMethod("test", (void*)HandleTest);
+    websDefineJst("myAspTtest", myAspTtest);
 
 }
 

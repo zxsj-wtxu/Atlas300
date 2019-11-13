@@ -42,7 +42,13 @@ std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamNa
     AVFormatContext* formatContext = nullptr;
     AVDictionary* options = nullptr;
     av_dict_set(&options, "rtsp_transport", "tcp", 0);
+    av_dict_set(&options, "max_delay", "5000000", 0); //最大demuxing延时（微秒）
     av_dict_set(&options, "stimeout", "3000000", 0);
+//    if (!av_dict_get(options, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {
+//        av_dict_set(&options, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+//    }
+//    av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
+
     int ret = avformat_open_input(&formatContext, streamName.c_str(), nullptr, &options);
     if (nullptr != options) {
         av_dict_free(&options);
@@ -103,9 +109,14 @@ void StreamPuller::pullStreamDataLoop()
         }
         av_init_packet(&pkt);
         int ret = av_read_frame(pFormatCtx.get(), &pkt);
-        if (0 != ret) {
-            printf("channel %d Read frame failed, continue!\n", channelId);
-            break;
+        if (ret < 0 ) {
+            if ((ret == AVERROR_EOF || avio_feof(pFormatCtx.get()->pb))) {
+                printf("EOF!exit\n");
+                exit(-1);
+            }
+            if (pFormatCtx.get()->pb && pFormatCtx.get()->pb->error)
+                break;
+            continue;
         } else if (pkt.stream_index == videoIndex) {
             if (pkt.size <= 0) {
                 printf("channel %d Invalid pkt.size %d\n", channelId, pkt.size);

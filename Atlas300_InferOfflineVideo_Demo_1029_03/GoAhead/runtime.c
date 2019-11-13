@@ -930,13 +930,13 @@ WebsValue valueString(cchar *value, int flags)
 
     memset(&v, 0x0, sizeof(v));
     v.valid = 1;
-    v.type = string;
+    v.type = String;
     if (flags & VALUE_ALLOCATE) {
         v.allocated = 1;
-        v.value.string = sclone(value);
+        v.value.String = sclone(value);
     } else {
         v.allocated = 0;
-        v.value.string = (char*) value;
+        v.value.String = (char*) value;
     }
     return v;
 }
@@ -944,8 +944,8 @@ WebsValue valueString(cchar *value, int flags)
 
 PUBLIC void valueFree(WebsValue* v)
 {
-    if (v->valid && v->allocated && v->type == string && v->value.string != NULL) {
-        wfree(v->value.string);
+    if (v->valid && v->allocated && v->type == String && v->value.String != NULL) {
+        wfree(v->value.String);
     }
     v->type = undefined;
     v->valid = 0;
@@ -2046,7 +2046,7 @@ WebsKey *hashLookup(WebsHash sd, cchar *name)
         Do an initial hash and then follow the link chain to find the right entry
      */
     for (sp = hash(tp, name); sp; sp = sp->forw) {
-        cp = sp->name.value.string;
+        cp = sp->name.value.String;
         if (cp[0] == name[0] && strcmp(cp, name) == 0) {
             break;
         }
@@ -2091,7 +2091,7 @@ WebsKey *hashEnter(WebsHash sd, cchar *name, WebsValue v, int arg)
     hindex = hashIndex(tp, name);
     if ((sp = tp->hash_table[hindex]) != NULL) {
         for (; sp; sp = sp->forw) {
-            cp = sp->name.value.string;
+            cp = sp->name.value.String;
             if (cp[0] == name[0] && strcmp(cp, name) == 0) {
                 break;
             }
@@ -2101,7 +2101,7 @@ WebsKey *hashEnter(WebsHash sd, cchar *name, WebsValue v, int arg)
             /*
                 Found, so update the value If the caller stores handles which require freeing, they will be lost here.
                 It is the callers responsibility to free resources before overwriting existing contents. We will here
-                free allocated strings which occur due to value_instring().  We should consider providing the cleanup
+                free allocated Strings which occur due to value_instring().  We should consider providing the cleanup
                 function on the open rather than the close and then we could call it here and solve the problem.
              */
             if (sp->content.valid) {
@@ -2167,7 +2167,7 @@ PUBLIC int hashDelete(WebsHash sd, cchar *name)
     hindex = hashIndex(tp, name);
     if ((sp = tp->hash_table[hindex]) != NULL) {
         for ( ; sp; sp = sp->forw) {
-            cp = sp->name.value.string;
+            cp = sp->name.value.String;
             if (cp[0] == name[0] && strcmp(cp, name) == 0) {
                 break;
             }

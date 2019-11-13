@@ -255,6 +255,7 @@ int CalibrationInfo::ImageContainer::removeArea(int value){
 		if(it != value_points.end()){
 			//重置区域值
 			drawPolygon(255, it->second);
+            it = value_points.erase(it);
 		}
 		pthread_mutex_unlock(&mutex_image);
 	}

@@ -31,8 +31,10 @@
 #include <sys/prctl.h>
 #include "CalibrationMethod.h"
 #include "BicycleObjectsBuffer.h"
-#include "Hi3559A.h"
+#include "bicyclecommon.h"
 using namespace std;
+
+#define CHANNEL_MAX 64
 
 class BicycleDetection {
 public:
@@ -46,28 +48,24 @@ public:
 	static int getCount2Total(int taskid);
 	static void setCount1(int taskid);
 	static void setCount2(int taskid);
-	static void run(vector<SsdResults>& results, Core& core, int taskid);
-	static void run_version2(vector<SsdResults>& results, Core& core, int taskid);
-	static void run_version2(ReturnResults& returnResults, Core& core, int taskid);
-	static void run_version2(vector<SsdResults>& results, Core& core, int taskid, vector<ObjectBicycle*>& trackResults);
-	static void run_version_muilt(vector<SsdResults>& results, int VdecChn, int taskid);
+    static void run_version_muilt(std::shared_ptr<SsdResults> &results, int VdecChn);
 
-	static int count_temp1[10];
-	static int count_temp2[10];
+    static int count_temp1[CHANNEL_MAX];
+    static int count_temp2[CHANNEL_MAX];
 
 	static struct timeval time1;
 	static struct timeval time2;
-	static int count1[10];
-	static int count1total[10];
-	static pthread_mutex_t count1_mutex[10];
+    static int count1[CHANNEL_MAX];
+    static int count1total[CHANNEL_MAX];
+    static pthread_mutex_t count1_mutex[CHANNEL_MAX];
 
-	static int count2[10];
-	static int count2total[10];
-	static pthread_mutex_t count2_mutex[10];
+    static int count2[CHANNEL_MAX];
+    static int count2total[CHANNEL_MAX];
+    static pthread_mutex_t count2_mutex[CHANNEL_MAX];
 
-	static float Flow1[10];
-	static float Flow2[10];
-	static BicycleObjectsBuffer bob[10];
+    static float Flow1[CHANNEL_MAX];
+    static float Flow2[CHANNEL_MAX];
+    static BicycleObjectsBuffer bob[CHANNEL_MAX];
 
 };
 

@@ -1562,8 +1562,8 @@ PUBLIC int jsGetVar(int jid, cchar *var, cchar **value)
             return -1;
         }
     }
-    assert(sp->content.type == string);
-    *value = sp->content.value.string;
+    assert(sp->content.type == String);
+    *value = sp->content.value.String;
     return i;
 }
 

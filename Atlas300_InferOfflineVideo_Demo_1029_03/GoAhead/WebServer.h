@@ -8,12 +8,8 @@
 #ifndef WEBSERVER_H_
 #define WEBSERVER_H_
 #include "BoardParams.h"
-extern "C"{
 #include "goahead.h"
-}
 //#include "BoardParams.h"
-
-using namespace std;
 
 class WebServer {
 public:
@@ -48,6 +44,8 @@ private:
 	static void testPost(Webs *wp);
 	static void HandleDeviceInfoAction(Webs *wp);
 	static void HandleSystemInfoAction(Webs *wp);
+    static void HandleTest(Webs *wp);
+    static int myAspTtest(int eid, Webs *wp, int argc, char **argv);
 };
 
 #endif /* WEBSERVER_H_ */

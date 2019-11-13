@@ -172,18 +172,18 @@ PUBLIC bool cgiHandler(Webs *wp)
     envp = walloc(envpsize * sizeof(char*));
     if (wp->vars) {
         for (n = 0, s = hashFirst(wp->vars); s != NULL; s = hashNext(wp->vars, s)) {
-            if (s->content.valid && s->content.type == string) {
-                vp = strim(s->name.value.string, 0, WEBS_TRIM_START);
+            if (s->content.valid && s->content.type == String) {
+                vp = strim(s->name.value.String, 0, WEBS_TRIM_START);
                 if (smatch(vp, "REMOTE_HOST") || smatch(vp, "HTTP_AUTHORIZATION") ||
                     smatch(vp, "IFS") || smatch(vp, "CDPATH") ||
                     smatch(vp, "PATH") || sstarts(vp, "LD_")) {
                     continue;
                 }
                 if (s->arg != 0 && *ME_GOAHEAD_CGI_VAR_PREFIX != '\0') {
-                    envp[n++] = sfmt("%s%s=%s", ME_GOAHEAD_CGI_VAR_PREFIX, s->name.value.string,
-                        s->content.value.string);
+                    envp[n++] = sfmt("%s%s=%s", ME_GOAHEAD_CGI_VAR_PREFIX, s->name.value.String,
+                        s->content.value.String);
                 } else {
-                    envp[n++] = sfmt("%s=%s", s->name.value.string, s->content.value.string);
+                    envp[n++] = sfmt("%s=%s", s->name.value.String, s->content.value.String);
                 }
                 trace(0, "Env[%d] %s", n, envp[n-1]);
                 if (n >= envpsize) {

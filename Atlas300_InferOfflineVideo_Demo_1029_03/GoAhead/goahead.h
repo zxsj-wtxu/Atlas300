@@ -292,8 +292,8 @@ PUBLIC void logSetPath(cchar *path);
     Logging support is enabled by the MakeMe setting: "logging: true" which creates the ME_GOAHEAD_LOGGING define in me.h
     most verbose. Level 2-4 are the most useful for debugging.
     @param level Integer verbosity level (0-9).
-    @param fmt Printf style format string
-    @param ... Arguments for the format string
+    @param fmt Printf style format String
+    @param ... Arguments for the format String
     @stability Stable
  */
 PUBLIC void logmsgProc(int level, cchar *fmt, ...);
@@ -306,8 +306,8 @@ PUBLIC void logmsgProc(int level, cchar *fmt, ...);
     Debug trace support is enabled by the MakeMe setting: "tracing: true" which creates the ME_GOAHEAD_TRACING define in
     me.h.
     @param level Integer verbosity level (0-9).
-    @param fmt Printf style format string
-    @param ... Arguments for the format string
+    @param fmt Printf style format String
+    @param ... Arguments for the format String
     @stability Stable
  */
 PUBLIC void traceProc(int level, cchar *fmt, ...);
@@ -396,7 +396,7 @@ typedef enum WebsType {
     big         = 7,
     flag        = 8,
     floating    = 9,
-    string      = 10,
+    String      = 10,
     bytes       = 11,
     symbol      = 12,
     errmsg      = 13
@@ -424,7 +424,7 @@ typedef struct WebsValue {
 #if ME_FLOAT
         double  floating;
 #endif
-        char    *string;
+        char    *String;
         char    *bytes;
         char    *errmsg;
         void    *symbol;
@@ -440,9 +440,9 @@ typedef struct WebsValue {
 #define value_numeric(t)    (t >= byteint && t <= big)
 
 /**
-    The value is a string type
+    The value is a String type
  */
-#define value_str(t)        (t >= string && t <= bytes)
+#define value_str(t)        (t >= String && t <= bytes)
 
 /**
     The value is valid supported type
@@ -450,7 +450,7 @@ typedef struct WebsValue {
 #define value_ok(t)         (t > undefined && t <= symbol)
 
 /**
-    Allocate strings using malloc
+    Allocate Strings using malloc
  */
 #define VALUE_ALLOCATE      0x1
 
@@ -463,10 +463,10 @@ typedef struct WebsValue {
 PUBLIC WebsValue valueInteger(long value);
 
 /**
-    Create an string value
+    Create an String value
     @param value String long value
-    @param flags Set to VALUE_ALLOCATE to store a copy of the string reference
-    @return Value object containing the string
+    @param flags Set to VALUE_ALLOCATE to store a copy of the String reference
+    @return Value object containing the String
     @stability Stable
  */
 PUBLIC WebsValue valueString(cchar *value, int flags);
@@ -480,7 +480,7 @@ PUBLIC WebsValue valueString(cchar *value, int flags);
 PUBLIC WebsValue valueSymbol(void *value);
 
 /**
-    Free any allocated string in a value
+    Free any allocated String in a value
     @param value Value object
     @stability Stable
  */
@@ -490,7 +490,7 @@ PUBLIC void valueFree(WebsValue *value);
 /**
     A WebsBuf (ring queue) allows maximum utilization of memory for data storage and is
     ideal for input/output buffering. This module provides a highly efficient
-    implementation and a vehicle for dynamic strings.
+    implementation and a vehicle for dynamic Strings.
     \n\n
     WARNING:  This is a public implementation and callers have full access to
     the queue structure and pointers.  Change this module very carefully.
@@ -679,10 +679,10 @@ PUBLIC int bufPutc(WebsBuf *bp, char c);
 PUBLIC ssize bufPutBlk(WebsBuf *bp, cchar *blk, ssize len);
 
 /**
-    Append a formatted string to the buffer at the endp position and increment the endp
+    Append a formatted String to the buffer at the endp position and increment the endp
     @param bp Buffer reference
-    @param fmt Printf style format string
-    @param ... Variable arguments for the format string
+    @param fmt Printf style format String
+    @param ... Variable arguments for the format String
     @return Count of characters appended. Returns negative if there is an allocation error.
     @ingroup WebsBuf
     @stability Stable
@@ -690,7 +690,7 @@ PUBLIC ssize bufPutBlk(WebsBuf *bp, cchar *blk, ssize len);
 PUBLIC ssize bufPut(WebsBuf *bp, cchar *fmt, ...) PRINTF_ATTRIBUTE(2,3);
 
 /**
-    Append a string to the buffer at the endp position and increment the endp
+    Append a String to the buffer at the endp position and increment the endp
     @param bp Buffer reference
     @param str String to append
     @return Count of characters appended. Returns negative if there is an allocation error.
@@ -720,7 +720,7 @@ PUBLIC ssize bufRoom(WebsBuf *bp);
 /**
     Get a reference to the start of buffer data
     @param bp Buffer reference
-    @return A string pointer.
+    @return A String pointer.
     @ingroup WebsBuf
     @stability Stable
  */
@@ -1264,7 +1264,7 @@ PUBLIC int socketOpen(void);
         [aaaa:bbbb:cccc:dddd:eeee:ffff:gggg:hhhh:iiii]:port
     If supplied an IPv6 address, the backets are stripped in the returned IP address.
     @param ipAddrPort IP address which may contain an optional ":port" component.
-    @param pip Returns a reference to an allocated string containing the IP address portion. Caller must free.
+    @param pip Returns a reference to an allocated String containing the IP address portion. Caller must free.
     @param pport Reference to an integer to hold the port component.
     @param secure Reference to an integer to be set to true if the address is using SSL/TLS.
     @param defaultPort Default port number to use if no port specifier is included in ipAddrPort.
@@ -1390,7 +1390,7 @@ PUBLIC WebsSocket *socketPtr(int sid);
 
 /**
     GoAhead Web Server Runtime
-    @description GoAhead provides a secure runtime environment for safe string manipulation and to
+    @description GoAhead provides a secure runtime environment for safe String manipulation and to
         help prevent buffer overflows and other potential security traps.
     @defgroup WebsRuntime WebsRuntime
     @see fmt wallocHandle wallocObject wfreeHandle hextoi itosbuf scaselesscmp scaselessmatch
@@ -1399,12 +1399,12 @@ PUBLIC WebsSocket *socketPtr(int sid);
  */
 
 /**
-    Format a string into a static buffer.
-    @description This call format a string using printf style formatting arguments. A trailing null will
-        always be appended. The call returns the size of the allocated string excluding the null.
+    Format a String into a static buffer.
+    @description This call format a String using printf style formatting arguments. A trailing null will
+        always be appended. The call returns the size of the allocated String excluding the null.
     @param buf Pointer to the buffer.
     @param maxSize Size of the buffer.
-    @param format Printf style format string
+    @param format Printf style format String
     @param ... Variable arguments to format
     @return Returns the buffer.
     @ingroup WebsRuntime
@@ -1443,35 +1443,35 @@ PUBLIC int wallocObject(void *map, int *max, int size);
 PUBLIC int wfreeHandle(void *map, int handle);
 
 /**
-    Convert a hex string to an integer
-    @description This call converts the supplied string to an integer using base 16.
-    @param str Pointer to the string to parse.
-    @return Returns the integer equivalent value of the string.
+    Convert a hex String to an integer
+    @description This call converts the supplied String to an integer using base 16.
+    @param str Pointer to the String to parse.
+    @return Returns the integer equivalent value of the String.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC uint hextoi(cchar *str);
 
 /**
-    Convert an integer to a string buffer.
-    @description This call converts the supplied 64 bit integer into a string formatted into the supplied buffer according
+    Convert an integer to a String buffer.
+    @description This call converts the supplied 64 bit integer into a String formatted into the supplied buffer according
         to the specified radix.
-    @param buf Pointer to the buffer that will hold the string.
+    @param buf Pointer to the buffer that will hold the String.
     @param size Size of the buffer.
     @param value Integer value to convert
     @param radix The base radix to use when encoding the number
-    @return Returns a reference to the string.
+    @return Returns a reference to the String.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC char *itosbuf(char *buf, ssize size, long long int value, int radix);
 
 /**
-    Compare strings ignoring case. This is a safe replacement for strcasecmp. It can handle NULL args.
-    @description Compare two strings ignoring case differences. This call operates similarly to strcmp.
-    @param s1 First string to compare.
-    @param s2 Second string to compare.
-    @return Returns zero if the strings are equivalent, < 0 if s1 sorts lower than s2 in the collating sequence
+    Compare Strings ignoring case. This is a safe replacement for strcasecmp. It can handle NULL args.
+    @description Compare two Strings ignoring case differences. This call operates similarly to strcmp.
+    @param s1 First String to compare.
+    @param s2 Second String to compare.
+    @return Returns zero if the Strings are equivalent, < 0 if s1 sorts lower than s2 in the collating sequence
         or > 0 if it sorts higher.
     @ingroup WebsRuntime
     @stability Stable
@@ -1479,60 +1479,60 @@ PUBLIC char *itosbuf(char *buf, ssize size, long long int value, int radix);
 PUBLIC int scaselesscmp(cchar *s1, cchar *s2);
 
 /**
-    Compare strings ignoring case. This is similar to scaselesscmp but it returns a boolean.
-    @description Compare two strings ignoring case differences.
-    @param s1 First string to compare.
-    @param s2 Second string to compare.
-    @return Returns true if the strings are equivalent, otherwise false.
+    Compare Strings ignoring case. This is similar to scaselesscmp but it returns a boolean.
+    @description Compare two Strings ignoring case differences.
+    @param s1 First String to compare.
+    @param s2 Second String to compare.
+    @return Returns true if the Strings are equivalent, otherwise false.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC bool scaselessmatch(cchar *s1, cchar *s2);
 
 /**
-    Clone a string
-    @description Copy a string into a newly allocated block.
+    Clone a String
+    @description Copy a String into a newly allocated block.
     @param str Pointer to the block to duplicate.
-    @return Returns a newly allocated string.
+    @return Returns a newly allocated String.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC char *sclone(cchar *str);
 
 /**
-    Clone a substring.
-    @description Copy a substring into a newly allocated block.
+    Clone a subString.
+    @description Copy a subString into a newly allocated block.
     @param str Pointer to the block to duplicate.
     @param len Number of bytes to copy. The actual length copied is the minimum of the given length and the length of
-        the supplied string. The result is null terminated.
-    @return Returns a newly allocated string.
+        the supplied String. The result is null terminated.
+    @return Returns a newly allocated String.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC char *snclone(cchar *str, ssize len);
 
 /**
-    Compare strings.
-    @description Compare two strings. This is a safe replacement for strcmp. It can handle null args.
-    @param s1 First string to compare.
-    @param s2 Second string to compare.
-    @return Returns zero if the strings are identical. Return -1 if the first string is less than the second. Return 1
-        if the first string is greater than the second.
+    Compare Strings.
+    @description Compare two Strings. This is a safe replacement for strcmp. It can handle null args.
+    @param s1 First String to compare.
+    @param s2 Second String to compare.
+    @return Returns zero if the Strings are identical. Return -1 if the first String is less than the second. Return 1
+        if the first String is greater than the second.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC int scmp(cchar *s1, cchar *s2);
 
 /**
-    Copy a string.
-    @description Safe replacement for strcpy. Copy a string and ensure the destination buffer is not overflowed.
-        The call returns the length of the resultant string or an error code if it will not fit into the target
-        string. This is similar to strcpy, but it will enforce a maximum size for the copied string and will
+    Copy a String.
+    @description Safe replacement for strcpy. Copy a String and ensure the destination buffer is not overflowed.
+        The call returns the length of the resultant String or an error code if it will not fit into the target
+        String. This is similar to strcpy, but it will enforce a maximum size for the copied String and will
         ensure it is always terminated with a null.
     @param dest Pointer to a pointer that will hold the address of the allocated block.
-    @param destMax Maximum size of the target string in characters.
+    @param destMax Maximum size of the target String in characters.
     @param src String to copy
-    @return Returns the number of characters in the target string.
+    @return Returns the number of characters in the target String.
     @ingroup WebsRuntime
     @stability Stable
  */
@@ -1541,49 +1541,49 @@ PUBLIC ssize scopy(char *dest, ssize destMax, cchar *src);
 /*
     String trim flags
  */
-#define WEBS_TRIM_START  0x1             /**< Flag for strim to trim from the start of the string */
-#define WEBS_TRIM_END    0x2             /**< Flag for strim to trim from the end of the string */
-#define WEBS_TRIM_BOTH   0x3             /**< Flag for strim to trim from both the start and the end of the string */
+#define WEBS_TRIM_START  0x1             /**< Flag for strim to trim from the start of the String */
+#define WEBS_TRIM_END    0x2             /**< Flag for strim to trim from the end of the String */
+#define WEBS_TRIM_BOTH   0x3             /**< Flag for strim to trim from both the start and the end of the String */
 
 /**
-    Format a string. This is a secure version of printf that can handle null args.
+    Format a String. This is a secure version of printf that can handle null args.
     @description Format the given arguments according to the printf style format. See fmt() for a full list of the
         format specifies. This is a secure replacement for sprintf, it can handle null arguments without crashes.
-    @param format Printf style format string
-    @param ... Variable arguments for the format string
-    @return Returns a newly allocated string
+    @param format Printf style format String
+    @param ... Variable arguments for the format String
+    @return Returns a newly allocated String
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC char *sfmt(cchar *format, ...);
 
 /**
-    Format a string with varargs. This is a secure version of printf that can handle null args.
+    Format a String with varargs. This is a secure version of printf that can handle null args.
     @description Format the given arguments according to the printf style format. See fmt() for a full list of the
         format specifies. This is a secure replacement for sprintf, it can handle null arguments without crashes.
-    @param format Printf style format string
+    @param format Printf style format String
     @param args Varargs argument obtained from va_start.
-    @return Returns a newly allocated string
+    @return Returns a newly allocated String
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC char *sfmtv(cchar *format, va_list args);
 
 /**
-    Return the length of a string.
-    @description Safe replacement for strlen. This call returns the length of a string and tests if the length is
+    Return the length of a String.
+    @description Safe replacement for strlen. This call returns the length of a String and tests if the length is
         less than a given maximum. It will return zero for NULL args.
     @param str String to measure.
-    @return Returns the length of the string
+    @return Returns the length of the String
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC ssize slen(cchar *str);
 
 /**
-    Convert a string to lower case.
-    @description Convert a string to its lower case equivalent.
-    @param str String to convert. This string is modified.
+    Convert a String to lower case.
+    @description Convert a String to its lower case equivalent.
+    @param str String to convert. This String is modified.
     @return Reference to the supplied str. Caller must not free.
     @ingroup WebsRuntime
     @stability Stable
@@ -1591,24 +1591,24 @@ PUBLIC ssize slen(cchar *str);
 PUBLIC char *slower(char *str);
 
 /**
-    Compare strings
-    @description Compare two strings. This is similar to #scmp but it returns a boolean.
-    @param s1 First string to compare.
-    @param s2 Second string to compare.
-    @return Returns true if the strings are equivalent, otherwise false.
+    Compare Strings
+    @description Compare two Strings. This is similar to #scmp but it returns a boolean.
+    @param s1 First String to compare.
+    @param s2 Second String to compare.
+    @return Returns true if the Strings are equivalent, otherwise false.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC bool smatch(cchar *s1, cchar *s2);
 
 /**
-    Compare strings ignoring case.
-    @description Compare two strings ignoring case differences for a given string length. This call operates
+    Compare Strings ignoring case.
+    @description Compare two Strings ignoring case differences for a given String length. This call operates
         similarly to strncasecmp.
-    @param s1 First string to compare.
-    @param s2 Second string to compare.
+    @param s1 First String to compare.
+    @param s2 Second String to compare.
     @param len Length of characters to compare.
-    @return Returns zero if the strings are equivalent, < 0 if s1 sorts lower than s2 in the collating sequence
+    @return Returns zero if the Strings are equivalent, < 0 if s1 sorts lower than s2 in the collating sequence
         or > 0 if it sorts higher.
     @ingroup WebsRuntime
     @stability Stable
@@ -1616,12 +1616,12 @@ PUBLIC bool smatch(cchar *s1, cchar *s2);
 PUBLIC int sncaselesscmp(cchar *s1, cchar *s2, ssize len);
 
 /**
-    Compare strings.
-    @description Compare two strings for a given string length. This call operates similarly to strncmp.
-    @param s1 First string to compare.
-    @param s2 Second string to compare.
+    Compare Strings.
+    @description Compare two Strings for a given String length. This call operates similarly to strncmp.
+    @param s1 First String to compare.
+    @param s2 Second String to compare.
     @param len Length of characters to compare.
-    @return Returns zero if the strings are equivalent, < 0 if s1 sorts lower than s2 in the collating sequence
+    @return Returns zero if the Strings are equivalent, < 0 if s1 sorts lower than s2 in the collating sequence
         or > 0 if it sorts higher.
     @ingroup WebsRuntime
     @stability Stable
@@ -1629,23 +1629,23 @@ PUBLIC int sncaselesscmp(cchar *s1, cchar *s2, ssize len);
 PUBLIC int sncmp(cchar *s1, cchar *s2, ssize len);
 
 /**
-    Copy characters from a string.
-    @description Safe replacement for strncpy. Copy bytes from a string and ensure the target string is not overflowed.
-        The call returns the length of the resultant string or an error code if it will not fit into the target
-        string. This is similar to strcpy, but it will enforce a maximum size for the copied string and will
+    Copy characters from a String.
+    @description Safe replacement for strncpy. Copy bytes from a String and ensure the target String is not overflowed.
+        The call returns the length of the resultant String or an error code if it will not fit into the target
+        String. This is similar to strcpy, but it will enforce a maximum size for the copied String and will
         ensure it is terminated with a null.
     @param dest Pointer to a pointer that will hold the address of the allocated block.
-    @param destMax Maximum size of the target string in characters.
+    @param destMax Maximum size of the target String in characters.
     @param src String to copy
     @param count Maximum count of characters to copy
-    @return Returns a reference to the destination if successful or NULL if the string won't fit.
+    @return Returns a reference to the destination if successful or NULL if the String won't fit.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC ssize sncopy(char *dest, ssize destMax, cchar *src, ssize count);
 
 /*
-    Test if a string is a radix 10 number.
+    Test if a String is a radix 10 number.
     @description The supported format is: [(+|-)][DIGITS]
     @return true if all characters are digits or '+' or '-'
     @ingroup WebsRuntime
@@ -1654,24 +1654,24 @@ PUBLIC ssize sncopy(char *dest, ssize destMax, cchar *src, ssize count);
 PUBLIC bool snumber(cchar *s);
 
 /**
-    Split a string at a delimiter
-    @description Split a string and return parts. The string is modified.
-        This routiner never returns null. If there are leading delimiters, the empty string will be returned
+    Split a String at a delimiter
+    @description Split a String and return parts. The String is modified.
+        This routiner never returns null. If there are leading delimiters, the empty String will be returned
         and *last will be set to the portion after the delimiters.
-        If str is null, an empty string will be returned.
-        If there are no characters after the delimiter, then *last will be set to the empty string.
+        If str is null, an empty String will be returned.
+        If there are no characters after the delimiter, then *last will be set to the empty String.
     @param str String to tokenize.
     @param delim Set of characters that are used as token separators.
-    @param last Reference to the portion after the delimiters. Will return an empty string if is not trailing portion.
-    @return Returns a pointer to the first part before the delimiters. If the string begins with delimiters, the empty
-        string will be returned.
+    @param last Reference to the portion after the delimiters. Will return an empty String if is not trailing portion.
+    @return Returns a pointer to the first part before the delimiters. If the String begins with delimiters, the empty
+        String will be returned.
     @ingroup WebsRuntime
     @stability Evolving
  */
 PUBLIC char *ssplit(char *str, cchar *delim, char **last);
 
 /**
-    Test if the string starts with a given pattern.
+    Test if the String starts with a given pattern.
     @param str String to examine
     @param prefix Pattern to search for
     @return Returns TRUE if the pattern was found. Otherwise returns zero.
@@ -1681,8 +1681,8 @@ PUBLIC char *ssplit(char *str, cchar *delim, char **last);
 PUBLIC bool sstarts(cchar *str, cchar *prefix);
 
 /**
-    Tokenize a string
-    @description Split a string into tokens.
+    Tokenize a String
+    @description Split a String into tokens.
     @param str String to tokenize.
     @param delim String of characters to use as token separators.
     @param last Last token pointer.
@@ -1693,22 +1693,22 @@ PUBLIC bool sstarts(cchar *str, cchar *prefix);
 PUBLIC char *stok(char *str, cchar *delim, char **last);
 
 /**
-    Trim a string.
-    @description Trim leading and trailing characters off a string.
+    Trim a String.
+    @description Trim leading and trailing characters off a String.
     @param str String to trim.
     @param set String of characters to remove.
     @param where Flags to indicate trim from the start, end or both. Use WEBS_TRIM_START, WEBS_TRIM_END, WEBS_TRIM_BOTH.
-    @return Returns a pointer to the trimmed string. May not equal \a str.
+    @return Returns a pointer to the trimmed String. May not equal \a str.
     @ingroup WebsRuntime
     @stability Stable
  */
 PUBLIC char *strim(char *str, cchar *set, int where);
 
 /**
-    Convert a string to upper case.
-    @description Convert a string to its upper case equivalent.
-    @param str String to convert. This string is modified.
-    @return Returns a pointer to the converted string. Will always equal str. Caller must not free.
+    Convert a String to upper case.
+    @description Convert a String to its upper case equivalent.
+    @param str String to convert. This String is modified.
+    @return Returns a pointer to the converted String. Will always equal str. Caller must not free.
     @ingroup WebsRuntime
     @stability Stable
  */
@@ -1913,7 +1913,7 @@ typedef struct Webs {
     char            *authResponse;      /**< Outgoing auth header */
     char            *authType;          /**< Authorization type (Basic/DAA) */
     char            *contentType;       /**< Body content type */
-    char            *cookie;            /**< Request cookie string */
+    char            *cookie;            /**< Request cookie String */
     char            *decodedQuery;      /**< Decoded request query */
     char            *digest;            /**< Password digest */
     char            *ext;               /**< Path extension */
@@ -1966,7 +1966,7 @@ typedef struct Webs {
 #if ME_GOAHEAD_DIGEST
     char            *cnonce;            /**< check nonce */
     char            *digestUri;         /**< URI found in digest header */
-    char            *nonce;             /**< opaque-to-client string sent by server */
+    char            *nonce;             /**< opaque-to-client String sent by server */
     char            *nc;                /**< nonce count */
     char            *opaque;            /**< opaque value passed from server */
     char            *qop;               /**< quality operator */
@@ -2194,10 +2194,10 @@ PUBLIC int websCompareVar(Webs *wp, cchar *var, cchar *value);
 PUBLIC void websConsumeInput(Webs *wp, ssize nbytes);
 
 /**
-    Decode the string using base-64 encoding
-    @description This modifies the original string
+    Decode the String using base-64 encoding
+    @description This modifies the original String
     @param str String to decode
-    @return The original string. Caller must not free.
+    @return The original String. Caller must not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2205,10 +2205,10 @@ PUBLIC char *websDecode64(char *str);
 
 /**
     Decode a block using base-46 encoding
-    @param str String to decode. The string must be null terminated.
-    @param len Reference to an integer holding the length of the decoded string.
+    @param str String to decode. The String must be null terminated.
+    @param len Reference to an integer holding the length of the decoded String.
     @param flags Reserved.
-    @return The original string.
+    @return The original String.
     @ingroup Webs
     @stability Stable
  */
@@ -2250,10 +2250,10 @@ PUBLIC int websDefineHandler(cchar *name, WebsHandlerProc match, WebsHandlerProc
 PUBLIC void websDone(Webs *wp);
 
 /**
-    Encode a string using base-64 encoding
-    @description The string is encoded insitu.
+    Encode a String using base-64 encoding
+    @description The String is encoded insitu.
     @param str String to encode
-    @return The original string.
+    @return The original String.
     @ingroup Webs
     @stability Stable
  */
@@ -2261,19 +2261,19 @@ PUBLIC char *websEncode64(char *str);
 
 /**
     Encode a block using base-64 encoding
-    @description The string is encoded insitu.
+    @description The String is encoded insitu.
     @param str String to encode.
-    @param len Length of string to encode
-    @return The original string.
+    @param len Length of String to encode
+    @return The original String.
     @ingroup Webs
     @stability Stable
  */
 PUBLIC char *websEncode64Block(char *str, ssize len);
 
 /**
-    Escape unsafe characters in a string
+    Escape unsafe characters in a String
     @param str String to escape
-    @return An allocated block containing the escaped string. Caller must free.
+    @return An allocated block containing the escaped String. Caller must free.
     @ingroup Webs
     @stability Stable
  */
@@ -2342,7 +2342,7 @@ PUBLIC int websGetBackground(void);
 #if ME_GOAHEAD_CGI
 /**
     Get a unique temporary filename for CGI communications
-    @return Allocated filename string. Caller must free.
+    @return Allocated filename String. Caller must free.
     @ingroup Webs
     @stability Stable
  */
@@ -2352,17 +2352,17 @@ PUBLIC char *websGetCgiCommName(void);
 /**
     Get the request cookie if supplied
     @param wp Webs request object
-    @return Cookie string if defined, otherwise null. Caller must not free.
+    @return Cookie String if defined, otherwise null. Caller must not free.
     @ingroup Webs
     @stability Stable
  */
 PUBLIC cchar *websGetCookie(Webs *wp);
 
 /**
-    Get a date as a string
+    Get a date as a String
     @description If sbuf is supplied, it is used to calculate the date. Otherwise, the current time is used.
     @param sbuf File info object
-    @return An allocated date string. Caller should free.
+    @return An allocated date String. Caller should free.
     @ingroup Webs
     @stability Stable
  */
@@ -2381,7 +2381,7 @@ PUBLIC int websGetDebug(void);
     Get the base file directory for a request
     @description Returns the request route directory if defined, otherwise returns the documents directory.
     @param wp Webs request object
-    @return Path name string. Caller should not free.
+    @return Path name String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2390,7 +2390,7 @@ PUBLIC cchar *websGetDir(Webs *wp);
 /**
     Get the GoAhead base documents directory
     @description The documents directory is defined at build time and may be overridden by the GoAhead command line.
-    @return Path string for the documents directory.
+    @return Path String for the documents directory.
     @ingroup Webs
     @stability Stable
  */
@@ -2419,7 +2419,7 @@ PUBLIC cchar *websGetExt(Webs *wp);
     Get the request filename
     @description The URI is mapped to a filename by decoding and prepending with the request directory.
     @param wp Webs request object
-    @return Filename string. Caller should not free.
+    @return Filename String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2430,7 +2430,7 @@ PUBLIC cchar *websGetFilename(Webs *wp);
     @description The request host is set to the Host HTTP header value if it is present. Otherwise it is set to
         the request URI hostname.
     @param wp Webs request object
-    @return Host string. Caller should not free.
+    @return Host String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2439,7 +2439,7 @@ PUBLIC cchar *websGetHost(Webs *wp);
 /**
     Get the request interface address
     @param wp Webs request object
-    @return Network interface string. Caller should not free.
+    @return Network interface String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2448,7 +2448,7 @@ PUBLIC cchar *websGetIfaddr(Webs *wp);
 /**
     Get the default index document name
     @description The default index is "index.html" and can be updated via websSetIndex.
-    @return Index name string. Caller should not free.
+    @return Index name String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2457,7 +2457,7 @@ PUBLIC cchar *websGetIndex(void);
 /**
     Get the request method
     @param wp Webs request object
-    @return HTTP method string. Caller should not free.
+    @return HTTP method String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2468,7 +2468,7 @@ PUBLIC cchar *websGetMethod(Webs *wp);
     @description The request password may be encoded depending on the authentication scheme.
         See wp->encoded to test if it is encoded.
     @param wp Webs request object
-    @return Password string. Caller should not free.
+    @return Password String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2479,7 +2479,7 @@ PUBLIC cchar *websGetPassword(Webs *wp);
     @description The URI path component excludes the http protocol, hostname, port, reference and query components.
     It always beings with "/".
     @param wp Webs request object
-    @return Request path string. Caller should not free.
+    @return Request path String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2498,7 +2498,7 @@ PUBLIC int websGetPort(Webs *wp);
     Get the request HTTP protocol
     @description This will be set to either "http" or "https"
     @param wp Webs request object
-    @return Protocol string. Caller should not free.
+    @return Protocol String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2507,7 +2507,7 @@ PUBLIC cchar *websGetProtocol(Webs *wp);
 /**
     Get the request query component
     @param wp Webs request object
-    @return Request query string. Caller should not free.
+    @return Request query String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2515,7 +2515,7 @@ PUBLIC cchar *websGetQuery(Webs *wp);
 
 /**
     Get the server host name
-    @return Host name string. Caller should not free.
+    @return Host name String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2523,7 +2523,7 @@ PUBLIC cchar *websGetServer(void);
 
 /**
     Get the server host name with port number.
-    @return Host name string with port number. Caller should not free.
+    @return Host name String with port number. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2531,7 +2531,7 @@ PUBLIC cchar *websGetServerUrl(void);
 
 /**
     Get the server IP address
-    @return Server IP address string. Caller should not free.
+    @return Server IP address String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2539,7 +2539,7 @@ PUBLIC cchar *websGetServerAddress(void);
 
 /**
     Get the server IP address with port number
-    @return Server IP:PORT address string. Caller should not free.
+    @return Server IP:PORT address String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2549,7 +2549,7 @@ PUBLIC cchar *websGetServerAddressUrl(void);
     Get the request URI
     @description This returns the request URI. This may be modified if the request is rewritten via websRewrite
     @param wp Webs request object
-    @return URI string. Caller should not free.
+    @return URI String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2558,7 +2558,7 @@ PUBLIC cchar *websGetUrl(Webs *wp);
 /**
     Get the client User-Agent HTTP header
     @param wp Webs request object
-    @return User-Agent string. Caller should not free.
+    @return User-Agent String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2568,7 +2568,7 @@ PUBLIC cchar *websGetUserAgent(Webs *wp);
     Get the request username
     @description If the request is authenticated, this call returns the username supplied during authentication.
     @param wp Webs request object
-    @return Username string if defined, otherwise null. Caller should not free.
+    @return Username String if defined, otherwise null. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2581,7 +2581,7 @@ PUBLIC cchar *websGetUsername(Webs *wp);
     @param wp Webs request object
     @param name Variable name
     @param defaultValue Default value to return if the variable is not defined
-    @return Variable value string. Caller should not free.
+    @return Variable value String. Caller should not free.
     @ingroup Webs
     @stability Stable
  */
@@ -2599,7 +2599,7 @@ PUBLIC cchar *websGetVar(Webs *wp, cchar *name, cchar *defaultValue);
 PUBLIC int websListen(cchar *endpoint);
 
 /**
-    Get an MD5 digest of a string
+    Get an MD5 digest of a String
     @param str String to analyze.
     @return Allocated MD5 checksum. Caller should free.
     @ingroup Webs
@@ -3021,7 +3021,7 @@ PUBLIC void websSetIpAddr(cchar *ipaddr);
 PUBLIC void websSetIndex(cchar *filename);
 
 /**
-    Create request variables for query string data
+    Create request variables for query String data
     @param wp Webs request object
     @ingroup Webs
     @stability Stable
@@ -3047,12 +3047,12 @@ PUBLIC void websSetStatus(Webs *wp, int status);
 PUBLIC void websSetTxLength(Webs *wp, ssize length);
 
 /**
-    Set a request variable to a formatted string value
+    Set a request variable to a formatted String value
     @description Request variables are defined for HTTP headers of the form HTTP_*.
         Some request handlers also define their own variables. For example: CGI environment variables.
     @param wp Webs request object
     @param name Variable name to set
-    @param fmt Value format string
+    @param fmt Value format String
     @param ... Args to format
     @return the allocated WebsKey
     @ingroup Webs
@@ -3061,7 +3061,7 @@ PUBLIC void websSetTxLength(Webs *wp, ssize length);
 PUBLIC WebsKey *websSetVarFmt(Webs *wp, cchar *name, cchar *fmt, ...);
 
 /**
-    Set a request variable to a string value
+    Set a request variable to a String value
     @description Request variables are defined for HTTP headers of the form HTTP_*.
         Some request handlers also define their own variables. For example: CGI environment variables.
     @param wp Webs request object
@@ -3088,7 +3088,7 @@ PUBLIC bool websTestVar(Webs *wp, cchar *name);
     This does not guarantee the filename is unique or that it is not already in use by another application.
     @param dir Directory to locate the temp file. Defaults to the O/S default temporary directory (usually /tmp)
     @param prefix Filename prefix
-    @return An allocated filename string
+    @return An allocated filename String
     @ingroup Webs
     @stability Stable
   */
@@ -3110,9 +3110,9 @@ PUBLIC int websTimeOpen(void);
 PUBLIC void websTimeClose(void);
 
 /**
-    Parse a date/time string
+    Parse a date/time String
     @description Try to intelligently parse a date.
-    This is a tolerant parser. It is not validating and will do its best to parse any possible date string.
+    This is a tolerant parser. It is not validating and will do its best to parse any possible date String.
     Supports the following date/time formats:
     \n\n
         ISO dates: 2009-05-21t16:06:05.000z
@@ -3128,7 +3128,7 @@ PUBLIC void websTimeClose(void);
         Time: 10:52[:23]
     \n\n
     @param time Reference to a
-    @param date Date/time string to parse
+    @param date Date/time String to parse
     @param defaults Optionally supply missing components for the date/time. Set to NULL if not used.
     @return Zero if successful, otherwise -1
     @ingroup Webs
@@ -3185,7 +3185,7 @@ PUBLIC char *websValidateUriPath(cchar *uri);
     i.e. It will permit %NN encodings. The set of valid characters is:
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%"
     @param uri Uri to test
-    @return True if the URI string is comprised of legal URI characters.
+    @return True if the URI String is comprised of legal URI characters.
     @ingroup Webs
     @stability Evolving
   */
@@ -3218,8 +3218,8 @@ PUBLIC void websWriteEndHeaders(Webs *wp);
         This routine differs from websWrite in that it traces header values to the log.
     @param wp Webs request object
     @param key Header key value
-    @param fmt Header value format string.
-    @param ... Arguments to the format string.
+    @param fmt Header value format String.
+    @param ... Arguments to the format String.
     @return Zero if successful, otherwise -1.
     @ingroup Webs
     @stability Stable
@@ -3231,8 +3231,8 @@ PUBLIC int websWriteHeader(Webs *wp, cchar *key, cchar *fmt, ...);
     @description The data is buffered and will be sent to the client when the buffer is full or websFlush is
         called.
     @param wp Webs request object
-    @param fmt Printf style format string.
-    @param ... Arguments to the format string.
+    @param fmt Printf style format String.
+    @param ... Arguments to the format String.
     @return Count of bytes written
     @ingroup Webs
     @stability Stable
@@ -3839,7 +3839,7 @@ PUBLIC void websSetPasswordStoreVerify(WebsVerify verify);
 /**
     Set a password for the user
     @param username User name
-    @param password Null terminated password string
+    @param password Null terminated password String
     @return Zero if successful, otherwise -1.
     @ingroup WebsAuth
     @stability Stable

@@ -12,10 +12,82 @@ SOURCES += \
     StreamPuller/StreamPuller.cpp \
     VDecEngine/VDecEngine.cpp \
     Common/DvppJpegEncode/DvppJpegEncode.cpp \
-    main.cpp
+    main.cpp \
+    BicycleDetectionModule/BicycleDetection.cpp \
+    DataTypes/AreaInfo.cpp \
+    DataTypes/BaseClass.cpp \
+    DataTypes/BicycleObjectsBuffer.cpp \
+    DataTypes/BoardParams.cpp \
+    DataTypes/CalibrationInfo.cpp \
+    DataTypes/CalibrationMethod.cpp \
+    DataTypes/DataBaseContainer.cpp \
+    DataTypes/DatabaseController.cpp \
+    DataTypes/DataContainer.cpp \
+    DataTypes/DetectionParam.cpp \
+    DataTypes/Device.cpp \
+    DataTypes/DeviceDatabase.cpp \
+    DataTypes/DeviceInfo.cpp \
+    DataTypes/EventItem.cpp \
+    DataTypes/MyString.cpp \
+    DataTypes/ObjectBicycle.cpp \
+    DataTypes/SystemDatabase.cpp \
+    DataTypes/SystemInfo.cpp \
+    DataTypes/Toolset.cpp \
+    Sqlite3Manager/Backup.cpp \
+    Sqlite3Manager/Column.cpp \
+    Sqlite3Manager/Database.cpp \
+    Sqlite3Manager/Exception.cpp \
+    Sqlite3Manager/Statement.cpp \
+    Sqlite3Manager/Transaction.cpp \
+    Sqlite3Manager/sqlite3.c \
+    BicycleDetectionModule/BicycleDetection.cpp \
+    ParamManager/AbstractParameter.cpp \
+    ParamManager/LaneAreaParameter.cpp \
+    ParamManager/ParameterManager.cpp \
+    Sqlite3Manager/Backup.cpp \
+    Sqlite3Manager/Column.cpp \
+    Sqlite3Manager/Database.cpp \
+    Sqlite3Manager/Exception.cpp \
+    Sqlite3Manager/Statement.cpp \
+    Sqlite3Manager/Transaction.cpp \
+    Sqlite3Manager/sqlite3.c \
+    GoAhead/WebServer.cpp \
+    GoAhead/action.c \
+    GoAhead/alloc.c \
+    GoAhead/auth.c \
+    GoAhead/cgi.c \
+    GoAhead/crypt.c \
+    GoAhead/file.c \
+    GoAhead/fs.c \
+    GoAhead/goahead.c \
+    GoAhead/http.c \
+    GoAhead/js.c \
+    GoAhead/jst.c \
+    GoAhead/options.c \
+    GoAhead/osdep.c \
+    GoAhead/rom.c \
+    GoAhead/route.c \
+    GoAhead/runtime.c \
+    GoAhead/socket.c \
+    GoAhead/time.c \
+    GoAhead/upload.c \
+    GoAhead/webapi.cpp \
+    graphmanager.cpp \
+    GraphManager/graphmanager.cpp \
+    HttpService/HttpService.cpp \
+    PostSsdResultsEngine/PostSsdResultsEngine.cpp
+
 INCLUDEPATH+=$$PWD/Common
+INCLUDEPATH+=$$PWD/DataTypes
+INCLUDEPATH+=$$PWD/
+INCLUDEPATH+=$$PWD/GraphManager
+INCLUDEPATH+=$$PWD/BicycleDetectionModule
 INCLUDEPATH+=$$PWD/Common/DvppJpegEncode
+INCLUDEPATH+=$$PWD/Sqlite3Manager/SQLiteCpp
+INCLUDEPATH+=$$PWD/Sqlite3Manager/
 INCLUDEPATH+=$$PWD/include/
+INCLUDEPATH+=$$PWD/include/curl
+INCLUDEPATH+=$$PWD/include/rapidjson
 INCLUDEPATH+=$$PWD/include/third_party/
 INCLUDEPATH+=$$PWD/include/libc_sec/include
 INCLUDEPATH+=$$PWD/include/inc
@@ -645,7 +717,112 @@ HEADERS += \
     include/third_party/protobuf/include/google/protobuf/wire_format_lite.h \
     include/third_party/protobuf/include/google/protobuf/wire_format_lite_inl.h \
     include/third_party/protobuf/include/google/protobuf/wrappers.pb.h \
-    Common/CommandLine.h
+    Common/CommandLine.h \
+    BicycleDetectionModule/BicycleDetection.h \
+    DataTypes/AreaInfo.h \
+    DataTypes/BaseClass.h \
+    DataTypes/BicycleObjectsBuffer.h \
+    DataTypes/BoardParams.h \
+    DataTypes/CalibrationInfo.h \
+    DataTypes/CalibrationMethod.h \
+    DataTypes/DataBaseContainer.h \
+    DataTypes/DatabaseController.h \
+    DataTypes/DataContainer.h \
+    DataTypes/DetectionParam.h \
+    DataTypes/Device.h \
+    DataTypes/DeviceDatabase.h \
+    DataTypes/DeviceInfo.h \
+    DataTypes/EventItem.h \
+    DataTypes/MyString.h \
+    DataTypes/ObjectBicycle.h \
+    DataTypes/SystemDatabase.h \
+    DataTypes/SystemInfo.h \
+    DataTypes/Toolset.h \
+    include/rapidjson/error/en.h \
+    include/rapidjson/error/error.h \
+    include/rapidjson/internal/biginteger.h \
+    include/rapidjson/internal/diyfp.h \
+    include/rapidjson/internal/dtoa.h \
+    include/rapidjson/internal/ieee754.h \
+    include/rapidjson/internal/itoa.h \
+    include/rapidjson/internal/meta.h \
+    include/rapidjson/internal/pow10.h \
+    include/rapidjson/internal/regex.h \
+    include/rapidjson/internal/stack.h \
+    include/rapidjson/internal/strfunc.h \
+    include/rapidjson/internal/strtod.h \
+    include/rapidjson/internal/swap.h \
+    include/rapidjson/msinttypes/inttypes.h \
+    include/rapidjson/msinttypes/stdint.h \
+    include/rapidjson/allocators.h \
+    include/rapidjson/document.h \
+    include/rapidjson/encodedstream.h \
+    include/rapidjson/encodings.h \
+    include/rapidjson/filereadstream.h \
+    include/rapidjson/filewritestream.h \
+    include/rapidjson/fwd.h \
+    include/rapidjson/istreamwrapper.h \
+    include/rapidjson/memorybuffer.h \
+    include/rapidjson/memorystream.h \
+    include/rapidjson/ostreamwrapper.h \
+    include/rapidjson/pointer.h \
+    include/rapidjson/prettywriter.h \
+    include/rapidjson/rapidjson.h \
+    include/rapidjson/reader.h \
+    include/rapidjson/schema.h \
+    include/rapidjson/stream.h \
+    include/rapidjson/stringbuffer.h \
+    include/rapidjson/writer.h \
+    Sqlite3Manager/Assertion.h \
+    Sqlite3Manager/Backup.h \
+    Sqlite3Manager/Column.h \
+    Sqlite3Manager/Database.h \
+    Sqlite3Manager/Exception.h \
+    Sqlite3Manager/sqlite3.h \
+    Sqlite3Manager/SQLiteCpp.h \
+    Sqlite3Manager/Statement.h \
+    Sqlite3Manager/Transaction.h \
+    Sqlite3Manager/Utils.h \
+    Sqlite3Manager/VariadicBind.h \
+    BicycleDetectionModule/BicycleDetection.h \
+    ParamManager/AbstractParameter.h \
+    ParamManager/LaneAreaParameter.h \
+    ParamManager/ParameterManager.h \
+    ParamManager/systemError.h \
+    Sqlite3Manager/SQLiteCpp/Assertion.h \
+    Sqlite3Manager/SQLiteCpp/Backup.h \
+    Sqlite3Manager/SQLiteCpp/Column.h \
+    Sqlite3Manager/SQLiteCpp/Database.h \
+    Sqlite3Manager/SQLiteCpp/Exception.h \
+    Sqlite3Manager/SQLiteCpp/sqlite3.h \
+    Sqlite3Manager/SQLiteCpp/SQLiteCpp.h \
+    Sqlite3Manager/SQLiteCpp/Statement.h \
+    Sqlite3Manager/SQLiteCpp/Transaction.h \
+    Sqlite3Manager/SQLiteCpp/Utils.h \
+    Sqlite3Manager/SQLiteCpp/VariadicBind.h \
+    Common/bicyclecommon.h \
+    GoAhead/embedtls.h \
+    GoAhead/goahead.h \
+    GoAhead/js.h \
+    GoAhead/mbedtls.h \
+    GoAhead/me.h \
+    GoAhead/osdep.h \
+    GoAhead/WebServer.h \
+    GoAhead/webapi.h \
+    graphmanager.h \
+    GraphManager/graphmanager.h \
+    HttpService/HttpService.h \
+    include/curl/curl.h \
+    include/curl/curlver.h \
+    include/curl/easy.h \
+    include/curl/mprintf.h \
+    include/curl/multi.h \
+    include/curl/stdcheaders.h \
+    include/curl/system.h \
+    include/curl/typecheck-gcc.h \
+    include/curl/urlapi.h \
+    PostSsdResultsEngine/PostSsdResultsEngine.h \
+    BicycleDetectionModule/bicycledetectionapi.h
 
 DISTFILES += \
     graph.config \
@@ -686,4 +863,116 @@ DISTFILES += \
     include/third_party/protobuf/include/google/protobuf/struct.proto \
     include/third_party/protobuf/include/google/protobuf/timestamp.proto \
     include/third_party/protobuf/include/google/protobuf/type.proto \
-    include/third_party/protobuf/include/google/protobuf/wrappers.proto
+    include/third_party/protobuf/include/google/protobuf/wrappers.proto \
+    GoAhead/self.crt \
+    config/www/web/ejs.js \
+    config/www/web/test.js \
+    config/www/web/utils.js \
+    config/www/web/test.asp \
+    config/www/web/test.pl \
+    config/www/web/test.xml \
+    config/www/web/icons/back.gif \
+    config/www/web/icons/blank.gif \
+    config/www/web/icons/compressed.gif \
+    config/www/web/icons/folder.gif \
+    config/www/web/icons/parent.gif \
+    config/www/web/icons/space.gif \
+    config/www/web/icons/text.gif \
+    config/www/web/listing/test_001.jpg \
+    config/www/web/listing/test_002.jpg \
+    config/www/web/listing/test_003.jpg \
+    config/www/web/favicon.ico \
+    config/www/web/dir/index.html \
+    config/www/web/english/eng.html \
+    config/www/web/js/cleaning.ejs \
+    config/www/web/My Documents/index.html \
+    config/www/web/secure/index.html \
+    config/www/web/sub/sub1/c.html \
+    config/www/web/sub/a.html \
+    config/www/web/sub/b.html \
+    config/www/web/upload/upload.html \
+    config/www/web/alive.html \
+    config/www/web/empty.html \
+    config/www/web/home.html \
+    config/www/web/index.html \
+    config/www/web/login.html \
+    config/www/web/main.html \
+    config/www/web/notFound.html \
+    config/www/web/numbers.html \
+    config/www/web/test.html \
+    config/www/web/listing/test.dat \
+    config/www/web/tmp/.keep \
+    config/www/web/big.jst \
+    config/www/web/big.txt \
+    config/www/web/lines.txt \
+    config/www/web/numbers.txt \
+    config/www/web/test.jst \
+    config/www/web/test.py \
+    config/www/web/compress/compressed.txt.gz \
+    config/www/web/ejs.js \
+    config/www/web/test.js \
+    config/www/web/utils.js \
+    config/www/web/test.asp \
+    config/goahead/simsun.ttc \
+    config/goahead/self.key \
+    config/www/web/test.pl \
+    config/goahead/rvPub.db \
+    config/goahead/rvPub.db.backup \
+    config/goahead/self.crt \
+    config/www/web/test.xml \
+    config/www/web/icons/back.gif \
+    config/www/web/icons/blank.gif \
+    config/www/web/icons/compressed.gif \
+    config/www/web/icons/folder.gif \
+    config/www/web/icons/parent.gif \
+    config/www/web/icons/space.gif \
+    config/www/web/icons/text.gif \
+    config/goahead/temp0.jpg \
+    config/www/web/listing/test_001.jpg \
+    config/www/web/listing/test_002.jpg \
+    config/www/web/listing/test_003.jpg \
+    config/www/web/favicon.ico \
+    config/www/web/admin/login.html \
+    config/www/web/alias/atest.html \
+    config/www/web/auth/basic/admin/index.html \
+    config/www/web/auth/basic/basic.html \
+    config/www/web/auth/digest/admin/index.html \
+    config/www/web/auth/digest/digest.html \
+    config/www/web/auth/form/index.html \
+    config/www/web/auth/form/login.html \
+    config/www/web/bench/1b.html \
+    config/www/web/bench/4k.html \
+    config/www/web/bench/64k.html \
+    config/www/web/bench/bench.html \
+    config/www/web/caching/client.html \
+    config/www/web/dir/index.html \
+    config/www/web/english/eng.html \
+    config/www/web/js/cleaning.ejs \
+    config/www/web/My Documents/index.html \
+    config/www/web/secure/index.html \
+    config/www/web/sub/sub1/c.html \
+    config/www/web/sub/a.html \
+    config/www/web/sub/b.html \
+    config/www/web/upload/upload.html \
+    config/www/web/alive.html \
+    config/www/web/empty.html \
+    config/www/web/home.html \
+    config/www/web/index.html \
+    config/www/web/login.html \
+    config/www/web/main.html \
+    config/www/web/notFound.html \
+    config/www/web/numbers.html \
+    config/www/web/test.html \
+    config/goahead/auth.txt \
+    config/goahead/outlog.txt \
+    config/goahead/route.txt \
+    config/goahead/total_hours.txt \
+    config/www/web/caching/cache.ejs \
+    config/www/web/listing/test.dat \
+    config/www/web/tmp/.keep \
+    config/www/web/big.jst \
+    config/www/web/big.txt \
+    config/www/web/lines.txt \
+    config/www/web/numbers.txt \
+    config/www/web/test.jst \
+    config/www/web/test.py

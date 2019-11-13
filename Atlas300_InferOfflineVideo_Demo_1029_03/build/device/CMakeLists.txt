@@ -18,6 +18,11 @@ add_library(SSDDetection SHARED ${SSDDetection_SRC})
 target_include_directories(SSDDetection PUBLIC ${PROJECT_SRC_ROOT}/SSDDetection)
 target_link_libraries(SSDDetection ${DDK_DEVICE_LIBRARIES} ${DDK_DEVICE_OPENCV_LIBRARYS})
 
+aux_source_directory(${PROJECT_SRC_ROOT}/PostSsdResultsEngine PostSsdResultsEngine_SRC)
+add_library(PostSsdResultsEngine SHARED ${PostSsdResultsEngine_SRC})
+target_include_directories(PostSsdResultsEngine PUBLIC ${PROJECT_SRC_ROOT}/PostSsdResultsEngine)
+target_link_libraries(PostSsdResultsEngine ${DDK_DEVICE_LIBRARIES} ${DDK_DEVICE_OPENCV_LIBRARYS})
+
 aux_source_directory(${PROJECT_SRC_ROOT}/ObjectClassification ObjectClassification_SRC)
 add_library(ObjectClassification SHARED ${ObjectClassification_SRC})
 target_include_directories(ObjectClassification PUBLIC ${PROJECT_SRC_ROOT}/ObjectClassification)

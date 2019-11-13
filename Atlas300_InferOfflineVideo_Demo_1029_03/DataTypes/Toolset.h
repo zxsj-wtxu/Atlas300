@@ -14,9 +14,7 @@ extern"C"{
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <ft2build.h>
 #include <math.h>
-#include FT_FREETYPE_H
 }
 typedef struct OsdImage {
 	char** pimage;
@@ -65,6 +63,7 @@ public:
 	double RectOverlap(cv::Rect& r, cv::Rect& rOther);
 
 	bool toImageFile(const MyString& deviceid, const MyString& areatype, const MyString& filepath);
+    int removeDeviceParam(const MyString& deviceid);
 	int clear(const MyString& deviceid, const MyString& areatype);
 	int removeArea(const MyString& deviceid, const MyString& areatype, int value);
 	int AreaValue(const MyString& deviceid, const MyString& areatype, int x, int y);
@@ -72,14 +71,6 @@ public:
 	int updateArea(const MyString& deviceid, const MyString& areatype, int value, const vector<cv::Point>& points);
 	int registCalibrationInfo(const MyString& deviceid, const MyString& areatype, int width = 1920, int height = 1080);
 
-	int ConvertCharToImage(char* charText, OSDIMAGE& _osdimage, int size);
-	int ConvertCharToImage(char* charText, const size_t charlen, OSDIMAGE& _osdimage, int size=36);
-	int ConvertWcharToImage(wchar_t* wcharText, const size_t wcharlen, OSDIMAGE& _osdimage, int size=36);
-	int ConvertTimeToImage(OSDIMAGE& _osdimage, int size=36);
-	int ConvertTimeToImage(char* charText, OSDIMAGE& _osdimage, int size);
-	bool ReleaseOsdImage(OSDIMAGE& _osdimage);
-	bool InitOsdImage(OSDIMAGE& _osdimage, char value);
-	bool AllocOsdImage(OSDIMAGE& _osdimage);
 	void GetNowTime(char* timE);
 private:
 	Toolset();
@@ -88,13 +79,6 @@ private:
 
 	map<const MyString, CalibrationInfo*> devices_calinfo;
 	pthread_mutex_t mutex_images = PTHREAD_MUTEX_INITIALIZER;
-
-	string configfile = "./simsun.ttc";
-	bool utf8_to_unicode(char *inbuf, size_t *inlen, wchar_t **w_out, size_t *w_outlen);
-
-	int Get_FT_BitMap(char**image,char* charText,int u32TextSize,int u32Height,int u32Width);
-	int Get_FT_Wchar_BitMap(char **image, wchar_t* wcharText,int u32TextSize,int u32Height,int u32Width);
-	int Get_FT_Wchar_BitMap(char **image, wchar_t* wcharText,int u32TextSize,int u32Height,int u32Width, int u32Wsize);
 };
 
 #endif /* TOOLSET_H_ */

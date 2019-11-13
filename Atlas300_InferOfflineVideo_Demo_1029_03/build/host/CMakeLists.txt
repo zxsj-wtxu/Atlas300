@@ -21,6 +21,52 @@ add_library(DstEngine SHARED ${DstEngine_SRC})
 target_include_directories(DstEngine PUBLIC ${FFMPEG_INCLUDE_DIRS})
 target_link_libraries(DstEngine ${DDK_HOST_LIBRARIES} ${DDK_HOST_OPENCV_LIBRARYS})
 
+aux_source_directory(${PROJECT_SRC_ROOT}/BicycleDetectionModule BicycleDetectionModule_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/DataTypes DataTypes_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/Sqlite3Manager Sqlite3Manager_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/ParamManager ParamManager_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/GoAhead GoAhead_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/GraphManager GraphManager_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/HttpService HttpService_SRC)
+
+add_library(BicycleCensus SHARED ${BicycleDetectionModule_SRC} ${DataTypes_SRC} ${Sqlite3Manager_SRC} ${ParamManager_SRC} ${GoAhead_SRC} ${GraphManager_SRC} ${HttpService_SRC})
+target_include_directories(BicycleCensus PUBLIC
+    ${PROJECT_SRC_ROOT}/include
+    ${PROJECT_SRC_ROOT}/include/curl
+    ${PROJECT_SRC_ROOT}/BicycleDetectionModule
+    ${PROJECT_SRC_ROOT}/DataTypes
+    ${PROJECT_SRC_ROOT}/Sqlite3Manager
+    ${PROJECT_SRC_ROOT}/Sqlite3Manager/SQLiteCpp
+    ${PROJECT_SRC_ROOT}/ParamManager
+    ${PROJECT_SRC_ROOT}/GoAhead
+    ${PROJECT_SRC_ROOT}/GraphManager
+    ${PROJECT_SRC_ROOT}/HttpService
+    )
+target_link_libraries(BicycleCensus
+    ${DDK_HOST_LIBRARIES}
+    ${DDK_PROTOBUF_LIBRARYS}
+    ${DDK_HOST_OPENCV_LIBRARYS}
+    ${PROJECT_SRC_ROOT}/libs/libgoahead-mbedtls.a
+    ${PROJECT_SRC_ROOT}/libs/libmbedtls.a
+    ${PROJECT_SRC_ROOT}/libs/libcurl.a
+    ${PROJECT_SRC_ROOT}/libs/libssl.a
+    ${PROJECT_SRC_ROOT}/libs/libcrypto.a
+    -lpthread
+    -ldl
+    -lm
+    -lz
+    )
+
 aux_source_directory(${PROJECT_SRC_ROOT} main_src)
 add_executable(main ${main_src})
-target_link_libraries(main ${DDK_HOST_LIBRARIES} ${DDK_PROTOBUF_LIBRARYS})
+target_include_directories(main PUBLIC
+    ${PROJECT_SRC_ROOT}/include
+    ${PROJECT_SRC_ROOT}/BicycleDetectionModule
+    ${PROJECT_SRC_ROOT}/DataTypes
+    ${PROJECT_SRC_ROOT}/Sqlite3Manager
+    ${PROJECT_SRC_ROOT}/Sqlite3Manager/SQLiteCpp
+    ${PROJECT_SRC_ROOT}/ParamManager)
+target_link_libraries(main BicycleCensus ${DDK_HOST_LIBRARIES} ${DDK_PROTOBUF_LIBRARYS} ${DDK_HOST_OPENCV_LIBRARYS} -lpthread -ldl -lm)
+
+
+

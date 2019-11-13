@@ -1543,9 +1543,9 @@ PUBLIC cchar *websGetVar(Webs *wp, cchar *var, cchar *defaultGetValue)
     assert(var && *var);
 
     if ((sp = hashLookup(wp->vars, var)) != NULL) {
-        assert(sp->content.type == string);
-        if (sp->content.value.string) {
-            return sp->content.value.string;
+        assert(sp->content.type == String);
+        if (sp->content.value.String) {
+            return sp->content.value.String;
         } else {
             return "";
         }
@@ -1698,7 +1698,7 @@ PUBLIC int websRedirectByStatus(Webs *wp, int status)
     if (wp->route && wp->route->redirects >= 0) {
         itosbuf(code, sizeof(code), status, 10);
         if ((key = hashLookup(wp->route->redirects, code)) != 0) {
-            uri = key->content.value.string;
+            uri = key->content.value.String;
         } else {
             return -1;
         }
@@ -1716,7 +1716,7 @@ PUBLIC int websRedirectByStatus(Webs *wp, int status)
 
 /*
     Escape HTML to escape defined characters (prevent cross-site scripting)
-    Returns an allocated string.
+    Returns an allocated String.
  */
 PUBLIC char *websEscapeHtml(cchar *html)
 {
@@ -1878,10 +1878,10 @@ PUBLIC void websWriteHeaders(Webs *wp, ssize length, cchar *location)
         if (location) {
             websWriteHeader(wp, "Location", "%s", location);
         } else if ((key = hashLookup(websMime, wp->ext)) != 0) {
-            websWriteHeader(wp, "Content-Type", "%s", key->content.value.string);
+            websWriteHeader(wp, "Content-Type", "%s", key->content.value.String);
         }
         for (cookie = hashFirst(wp->responseCookies); cookie; cookie = next) {
-            websWriteHeader(wp, "Set-Cookie", "%s", cookie->content.value.string);
+            websWriteHeader(wp, "Set-Cookie", "%s", cookie->content.value.String);
             websWriteHeader(wp, "Cache-Control", "%s", "no-cache=\"set-cookie\"");
             next = hashNext(wp->responseCookies, cookie);
         }

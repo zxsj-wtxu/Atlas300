@@ -221,7 +221,7 @@ PUBLIC bool websCan(Webs *wp, WebsHash abilities)
             wp->user = websLookupUser(wp->username);
         }
         for (key = hashFirst(abilities); key; key = hashNext(abilities, key)) {
-            ability = key->name.value.string;
+            ability = key->name.value.String;
             if ((cp = strchr(ability, '|')) != 0) {
                 /*
                     Examine a set of alternative abilities. Need only one to match

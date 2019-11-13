@@ -11,7 +11,11 @@ set(PROJECT_SRC_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
 set(CMAKE_MODULE_PATH ${PROJECT_SRC_ROOT}/../CMake)
 
 file(COPY ${PROJECT_SRC_ROOT}/graph.config
+        ${PROJECT_SRC_ROOT}/rvPub.db
         ${PROJECT_SRC_ROOT}/data/misc/imagenet1000_clsidx_to_labels.txt
+        ${PROJECT_SRC_ROOT}/config
+        ${PROJECT_SRC_ROOT}/config/goahead/self.key
+        ${PROJECT_SRC_ROOT}/config/goahead/self.crt
         DESTINATION ${CMAKE_BINARY_DIR})
 
 find_package(DDK REQUIRED)

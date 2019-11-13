@@ -106,8 +106,7 @@ static shared_ptr<IAITensor> createTensors(const TensorDimension& tensorDims, ve
         return shared_ptr<hiai::IAITensor>(nullptr);
     }
     bufferVec.push_back(shared_ptr<uint8_t>(buffer, HIAI_DVPP_DFree));
-    shared_ptr<IAITensor> outputTensor = AITensorFactory::GetInstance()->CreateTensor(
-        tensorDesc, buffer, tensorDims.size);
+    shared_ptr<IAITensor> outputTensor = AITensorFactory::GetInstance()->CreateTensor(tensorDesc, buffer, tensorDims.size);
     shared_ptr<hiai::AINeuralNetworkBuffer> nn_tensor = static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensor);
     nn_tensor->SetName(tensorDims.name);
     nn_tensor->SetNumber(tensorDims.n);

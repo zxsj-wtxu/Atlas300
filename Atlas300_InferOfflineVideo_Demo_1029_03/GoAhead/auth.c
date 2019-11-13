@@ -364,7 +364,7 @@ static void computeAbilities(WebsHash abilities, cchar *role, int depth)
         if ((key = hashLookup(roles, role)) != 0) {
             rp = (WebsRole*) key->content.value.symbol;
             for (key = hashFirst(rp->abilities); key; key = hashNext(rp->abilities, key)) {
-                computeAbilities(abilities, key->name.value.string, ++depth);
+                computeAbilities(abilities, key->name.value.String, ++depth);
             }
         } else {
             hashEnter(abilities, role, valueInteger(0), 0);
@@ -390,8 +390,8 @@ static void computeUserAbilities(WebsUser *user)
         WebsKey *key;
         trace(5 | WEBS_RAW_MSG, "User \"%s\" has abilities: ", user->name);
         for (key = hashFirst(user->abilities); key; key = hashNext(user->abilities, key)) {
-            trace(5 | WEBS_RAW_MSG, "%s ", key->name.value.string);
-            ability = key->name.value.string;
+            trace(5 | WEBS_RAW_MSG, "%s ", key->name.value.String);
+            ability = key->name.value.String;
         }
         trace(5, "");
     }

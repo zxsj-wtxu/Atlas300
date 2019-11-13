@@ -41,11 +41,11 @@ void HttpService::setHostUrl(string url){
 	this->url = url;
 }
 
-string HttpService::get(string interface){
+string HttpService::get(string interface_str){
 	if(_this == NULL) return "";
 	HttpService::DATA data;
 	data.type = HttpService::STRING;
-    auto res = curl_get_req(url+interface, data);
+    auto res = curl_get_req(url+interface_str, data);
     if (res != CURLE_OK)
         return "";
     return data.response;
@@ -125,67 +125,68 @@ void HttpService::SendPostData(const string& send_url, const string& data){
     curl_easy_cleanup(curl);
 }
 
-string HttpService::get(string interface, string filename){
+string HttpService::get(string interface_str, string filename){
 	if(_this == NULL) return "";
 	HttpService::DATA data;
 	data.type = HttpService::FILETYPE;
 	data.writefilename = filename;
-    auto res = curl_get_req(url+interface, data);
+    auto res = curl_get_req(url+interface_str, data);
     if (res != CURLE_OK)
         return "";
     return data.response;
 }
+
 int HttpService::jj_Openssl_Get_MD5(const char *input, char *output) {
-	char password[1024 * 1024 * 5] = { 0 };
-	MD5_CTX x;
-	int i = 0, len;
-	char *out = NULL;
-	unsigned char d[16];
-	unsigned char tmp[128] = { 0 };
-	strcpy(password, input);
-	MD5_Init(&x);
-	MD5_Update(&x, (char *) password, strlen(password));
-	MD5_Final(d, &x);
-	out = (char *) malloc(35);
-	memset(out, 0x00, 35);
-	strcpy(out, "$1$");
-	for (i = 0; i < 16; i++) {
-		sprintf(out + (i * 2), "%02x", d[i]); //转换为32位
-	}
-	out[32] = 0;
-	strcpy(output, out);
-	free(out);
-	return 0;
+    char password[1024 * 1024 * 5] = { 0 };
+    MD5_CTX x;
+    int i = 0, len;
+    char *out = NULL;
+    unsigned char d[16];
+    unsigned char tmp[128] = { 0 };
+    strcpy(password, input);
+    MD5_Init(&x);
+    MD5_Update(&x, (char *) password, strlen(password));
+    MD5_Final(d, &x);
+    out = (char *) malloc(35);
+    memset(out, 0x00, 35);
+    strcpy(out, "$1$");
+    for (i = 0; i < 16; i++) {
+        sprintf(out + (i * 2), "%02x", d[i]); //转换为32位
+    }
+    out[32] = 0;
+    strcpy(output, out);
+    free(out);
+    return 0;
 }
 
 int HttpService::jj_Openssl_GetFile_MD5(const char *filename, char *output) {
-	MD5_CTX ctx;
-	int len = 0;
-	char *out = NULL;
-	unsigned char buffer[1024] = {0};
-	unsigned char digest[16] = {0};
+    MD5_CTX ctx;
+    int len = 0;
+    char *out = NULL;
+    unsigned char buffer[1024] = {0};
+    unsigned char digest[16] = {0};
 
-	FILE *pFile = fopen (filename, "rb"); // 我没有判断空指针
+    FILE *pFile = fopen (filename, "rb"); // 我没有判断空指针
 
-	MD5_Init (&ctx);
-	while ((len = fread (buffer, 1, 1024, pFile)) > 0)
-	{
-		MD5_Update (&ctx, buffer, len);
-	}
+    MD5_Init (&ctx);
+    while ((len = fread (buffer, 1, 1024, pFile)) > 0)
+    {
+        MD5_Update (&ctx, buffer, len);
+    }
 
-	MD5_Final (digest, &ctx);
+    MD5_Final (digest, &ctx);
 
-	fclose(pFile);
+    fclose(pFile);
 
-	out = (char *) malloc(35);
-	memset(out, 0x00, 35);
-	strcpy(out, "$1$");
-	for (int i = 0; i < 16; i++) {
-		sprintf(out + (i * 2), "%02x", digest[i]); //转换为32位
-	}
-	out[32] = 0;
-	strcpy(output, out);
-	free(out);
+    out = (char *) malloc(35);
+    memset(out, 0x00, 35);
+    strcpy(out, "$1$");
+    for (int i = 0; i < 16; i++) {
+        sprintf(out + (i * 2), "%02x", digest[i]); //转换为32位
+    }
+    out[32] = 0;
+    strcpy(output, out);
+    free(out);
 
     return 0;
 }

@@ -41,6 +41,8 @@
 #include "AppCommon.h"
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui.hpp"
+#include "bicyclecommon.h"
+
 #define DST_INPUT_SIZE 1
 #define DST_OUTPUT_SIZE 1
 
@@ -53,9 +55,6 @@ private:
     // process the classify result
     HIAI_StatusT ProcessResult(const std::string& resultFileTxt, const std::shared_ptr<DeviceStreamData>& inputArg);
 
-    // process the classify result
-    HIAI_StatusT SaveJpg(const std::string& resultFileJpg, const std::shared_ptr<DeviceStreamData>& inputArg);
-    
     // label file path
     string labelPath;
     int imageid = 0;

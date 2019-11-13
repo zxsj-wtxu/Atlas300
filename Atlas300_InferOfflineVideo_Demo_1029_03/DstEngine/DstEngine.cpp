@@ -64,27 +64,6 @@ HIAI_StatusT DstEngine::Init(const hiai::AIConfig& config, const std::vector<hia
     return HIAI_OK;
 }
 
-HIAI_StatusT DstEngine::SaveJpg(const std::string& resultFileJpg, const std::shared_ptr<DeviceStreamData>& inputArg)
-{
-    void *ptr = (void *)(inputArg->imgOrigin.buf.data.get());
-    unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
-
-    vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
-    cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
-    cv::imwrite(resultFileJpg, image);
-
-//    FILE *fp = fopen(resultFileJpg.c_str(), "wb");
-//    if (NULL == fp) {
-//        HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[SaveFile] Save file engine: open file fail!");
-//        return HIAI_ERROR;
-//    } else {
-//        fwrite(ptr, 1, inputArg->imgOrigin.buf.len_of_byte, fp);
-//        fflush(fp);
-//        fclose(fp);
-//    }
-    return HIAI_OK;
-}
-
 HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const std::shared_ptr<DeviceStreamData>& inputArg)
 {
     uint32_t graph_cur_id = this->GetGraphId();
@@ -93,25 +72,30 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
     MkdirP(res_folder);
     string resultFile = res_folder + FILE_PRE_FIX + to_string(getCurentTime());
     string resultFileJpg = resultFile + ".jpg";
-
     unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
     vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
     cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
     int i=0;
-    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "detectResult size:%d", inputArg->detectResult.size());
+    std::shared_ptr<SsdResults> results = std::make_shared<SsdResults>();
+
     for (const auto& det : inputArg->detectResult) {
+        std::shared_ptr<BicycleDetectionResult> outdata = std::make_shared<BicycleDetectionResult>();
         int argmax = det.classifyResult.classIndex;
         float score = det.classifyResult.confidence;
-        int obj_classId = det.classId;
-        float obj_confidence = det.confidence;
-        int xmin, ymin, xmax, ymax;
-        xmin = det.location.anchor_lt.x;
-        ymin = det.location.anchor_lt.y;
-        xmax = det.location.anchor_rb.x;
-        ymax = det.location.anchor_rb.y;
-        cv::rectangle(image, cv::Point(xmin, ymin), cv::Point(xmax, ymax), cv::Scalar(0, 0, 255), 2);
+        outdata.get()->type = det.classId;
+        outdata.get()->confidence = det.confidence;
+        outdata.get()->xmin = det.location.anchor_lt.x;
+        outdata.get()->ymin = det.location.anchor_lt.y;
+        outdata.get()->xmax = det.location.anchor_rb.x;
+        outdata.get()->ymax = det.location.anchor_rb.y;
+        results.get()->results.push_back(outdata);
+        results.get()->channelid = inputArg.get()->info.channelId;
+        cv::rectangle(image, cv::Point(outdata.get()->xmin, outdata.get()->ymin), cv::Point(outdata.get()->xmax, outdata.get()->ymax), cv::Scalar(0, 0, 255), 2);
     }
     cv::imwrite(resultFileJpg, image);
+    SendData(0, "SsdResults", static_pointer_cast<void>(results));
+
+    results.get()->results.clear();
     return HIAI_OK;
 }
 HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)

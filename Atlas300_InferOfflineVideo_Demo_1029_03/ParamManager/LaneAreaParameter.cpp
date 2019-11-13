@@ -70,7 +70,6 @@ void LaneAreaParameter::setMapSet(map<string, string> mapset){
 	int i=0;
 
 	if(mapset.empty()){
-		printLog(0, " The specified parameters is empty.");
 		return;
 	}
 

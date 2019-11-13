@@ -74,7 +74,7 @@ static void MyUploadTest(Webs *wp)
     if (scaselessmatch(wp->method, "POST")) {
         for (s = hashFirst(wp->files); s; s = hashNext(wp->files, s)) {
             up = s->content.value.symbol;
-            websWrite(wp, "FILE: %s\r\n", s->name.value.string);
+            websWrite(wp, "FILE: %s\r\n", s->name.value.String);
             websWrite(wp, "FILENAME=%s\r\n", up->filename);
             websWrite(wp, "CLIENT=%s\r\n", up->clientFilename);
             websWrite(wp, "TYPE=%s\r\n", up->contentType);
