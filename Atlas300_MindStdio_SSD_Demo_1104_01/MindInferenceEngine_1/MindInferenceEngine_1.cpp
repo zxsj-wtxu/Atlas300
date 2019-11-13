@@ -329,8 +329,7 @@ HIAI_StatusT MindInferenceEngine_1::Predict() {
     for (unsigned int i = 0; i < predict_input_data_.size(); i++) {
         std::map<uint8_t *, int> tmp = predict_input_data_[i];
         for (std::map<uint8_t *, int>::iterator it = tmp.begin();it != tmp.end(); ++it) {
-            shared_ptr<hiai::IAITensor> inputTensor =
-                hiai::AITensorFactory::GetInstance()->CreateTensor(inputTensorDesc, (void *)(it->first), it->second);
+            shared_ptr<hiai::IAITensor> inputTensor = hiai::AITensorFactory::GetInstance()->CreateTensor(inputTensorDesc, (void *)(it->first), it->second);
             input_data_vec.push_back(inputTensor); // AIModelManager push input data
         }
     }
@@ -404,6 +403,7 @@ HIAI_StatusT MindInferenceEngine_1::Predict() {
 
     hiai::AIContext ai_context;
     HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[MindInferenceEngine_1] ai_model_manager_->Process start!");
+    HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[MindInferenceEngine_1] input_data_vec:%d ,output_data_vec:%d",input_data_vec.size(), output_data_vec.size());
     ret = ai_model_manager_->Process(ai_context, input_data_vec, output_data_vec, 0);
     if (hiai::SUCCESS != ret)
     {
@@ -472,99 +472,13 @@ void MindInferenceEngine_1::HandleModelBatchFailure(const int batch_begin, const
 */
 HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_SIZE)
 {
-    HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[MindInferenceEngine_1] start process!");
     HIAI_StatusT hiai_ret = HIAI_OK;
     std::lock_guard<std::mutex> lk(memoryRecursiveMutex_);
     if (tran_data == nullptr) {
         tran_data = std::make_shared<EngineTransT>();
     }
-    // 1.PreProcess:Framework input data
-    if (nullptr != arg0)
-    {
-        std::shared_ptr<BatchImageParaWithScaleT> dataInput = std::static_pointer_cast<BatchImageParaWithScaleT>(arg0);
-
-        if (!isSentinelImage(dataInput)) {
-            if (dataInputIn_ != nullptr) {
-                if (dataInputIn_->b_info.batch_ID == dataInput->b_info.batch_ID && !dataInput->v_img.empty() && !dataInput->b_info.frame_ID.empty()) {
-                    dataInputIn_->v_img.push_back(dataInput->v_img[0]);
-                    dataInputIn_->b_info.frame_ID.push_back(dataInput->b_info.frame_ID[0]);
-                }
-            } else {
-                dataInputIn_ = std::make_shared<BatchImageParaWithScaleT>();
-                if (dataInputIn_ == nullptr){
-                    HIAI_ENGINE_LOG(HIAI_IDE_WARNING, "[MindInferenceEngine_1] malloc error");
-                    return HIAI_ERROR;
-                }
-                for (int i = 0; i < dataInput->b_info.frame_ID.size(); ++i){
-                    dataInputIn_->b_info.frame_ID.push_back(dataInput->b_info.frame_ID[i]);
-                }
-                dataInputIn_->b_info.batch_size = dataInput->b_info.batch_size;
-                dataInputIn_->b_info.max_batch_size = dataInput->b_info.max_batch_size;
-                dataInputIn_->b_info.batch_ID = dataInput->b_info.batch_ID;
-                dataInputIn_->b_info.is_first = dataInput->b_info.is_first;
-                dataInputIn_->b_info.is_last = dataInput->b_info.is_last;
-                for(int i = 0; i < dataInput->v_img.size(); ++i){
-                    dataInputIn_->v_img.push_back(dataInput->v_img[i]);
-                }
-            }
-            if (dataInputIn_->v_img.size() != dataInputIn_->b_info.batch_size) {
-                HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[MindInferenceEngine_1] Wait for other %d batch image info!", (dataInputIn_->b_info.batch_size - dataInputIn_->v_img.size()));
-                return HIAI_OK;
-            }
-            input_que_.PushData(0, dataInputIn_);
-            dataInputIn_ = nullptr;
-        } else {
-            input_que_.PushData(0, arg0);
-        }
-    }
-
-    image_handle = nullptr;
-
-#if INPUT_SIZE < 3
-    if (!input_que_.PopAllData(image_handle)) \
-    {
-        HandleExceptions("[MindInferenceEngine_1] fail to PopAllData");
-        return HIAI_ERROR;
-    }
-#endif
-
-#if (INPUT_SIZE == 3)
-    DEFINE_MULTI_INPUT_ARGS_POP(3);
-#endif
-
-#if (INPUT_SIZE == 4)
-    DEFINE_MULTI_INPUT_ARGS_POP(4);
-#endif
-
-#if (INPUT_SIZE == 5)
-    DEFINE_MULTI_INPUT_ARGS_POP(5);
-#endif
-
-#if (INPUT_SIZE == 6)
-    DEFINE_MULTI_INPUT_ARGS_POP(6);
-#endif
-
-#if (INPUT_SIZE == 7)
-    DEFINE_MULTI_INPUT_ARGS_POP(7);
-#endif
-
-#if (INPUT_SIZE == 8)
-    DEFINE_MULTI_INPUT_ARGS_POP(8);
-#endif
-
-#if (INPUT_SIZE == 9)
-    DEFINE_MULTI_INPUT_ARGS_POP(9);
-#endif
-
-#if (INPUT_SIZE == 10)
-    DEFINE_MULTI_INPUT_ARGS_POP(10);
-#endif
-
-    if (nullptr == image_handle)
-    {
-        HandleExceptions("[MindInferenceEngine_1] Image_handle is nullptr");
-        return HIAI_ERROR;
-    }
+    // 1.预处理，
+    image_handle = std::static_pointer_cast<BatchImageParaWithScaleT>(arg0);
     //add sentinel image for showing this data in dataset are all sended, this is last step.
     if (isSentinelImage(image_handle))
     {
@@ -572,25 +486,6 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
     }
 
     int image_number = image_handle->v_img.size();
-#if (INPUT_SIZE == 3)
-    if (nullptr == _multi_input_2)
-    {
-        HandleExceptions("[MindInferenceEngine_1] fail to process invalid message");
-        return HIAI_ERROR;
-    }
-    int info_number = _multi_input_2->v_info.size();
-    if (info_number != image_number) {
-        HandleExceptions("[MindInferenceEngine_1] ERROR the number of image data and information data doesn't match!");
-    }
-    int _input_buffer2_size = sizeof(float) * IMAGE_INFO_DATA_NUM * batch_size;
-    uint8_t * _input_buffer2 = nullptr;
-    hiai_ret = hiai::HIAIMemory::HIAI_DMalloc(_input_buffer2_size, (void *&)_input_buffer2, 1000);
-    if (hiai_ret != HIAI_OK || _input_buffer2 == nullptr) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[MindInferenceEngine_1] HIAI_DMalloc _input_buffer2 failed.");
-        return HIAI_ERROR;
-    }
-#endif
-
     int image_size = image_handle->v_img[0].img.size * sizeof(uint8_t);
     int _input_buffer1_size = image_size * batch_size;
     if(_input_buffer1_size <= 0){
@@ -601,10 +496,6 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
     hiai_ret = hiai::HIAIMemory::HIAI_DMalloc(_input_buffer1_size, (void *&)_input_buffer1, 1000);
     if (hiai_ret != HIAI_OK || _input_buffer1 == nullptr) {
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[MindInferenceEngine_1] HIAI_DMalloc _input_buffer1 failed.");
-#if (INPUT_SIZE == 3)
-        hiai::HIAIMemory::HIAI_DFree(_input_buffer2);
-        _input_buffer2 = nullptr;
-#endif
         return HIAI_ERROR;
     }
 
@@ -619,6 +510,7 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
     tran_data->b_info.max_batch_size = cnt_batch* batch_size;
 
     //the loop for each batch
+    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[MindInferenceEngine_1] image_number:%d, batch_size:%d",image_number, batch_size);
     for (int i = 0; i < image_number; i += batch_size) {
         predict_input_data_.clear();
         //1.prepare input buffer for each batch
@@ -629,24 +521,6 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
         std::map<uint8_t *, int> input1;
         input1.insert(std::make_pair(_input_buffer1, _input_buffer1_size));
         predict_input_data_.push_back(input1);
-#if (INPUT_SIZE == 2)
-        DEFINE_MULTI_INPUT_ARGS(2);
-#endif
-
-#if (INPUT_SIZE == 3)
-        //int each_size;
-        if (HIAI_OK != PrepareInforInput(_input_buffer2, image_number, i, _multi_input_2)) {
-            //HandleExceptions("[MindInferenceEngine_1] batch " + std::to_string(tran_data->b_info.batch_ID) + " failed!");
-            HandleModelBatchFailure(i, image_number);
-            continue;
-            //return HIAI_ERROR;
-        }
-        std::map<uint8_t *, int> input2;
-        input2.insert(std::make_pair(_input_buffer2, _input_buffer2_size));
-        predict_input_data_.push_back(input2);
-        DEFINE_MULTI_INPUT_ARGS(3);
-#endif
-
         // 2.Call Process, Predict
         input_data_vec.clear();
         if (HIAI_OK != Predict()) {
@@ -668,10 +542,6 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
                     HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[MindInferenceEngine_1] out.size <= 0");
                     hiai::HIAIMemory::HIAI_DFree(_input_buffer1);
                     _input_buffer1 = nullptr;
-#if (INPUT_SIZE == 3)
-                    hiai::HIAIMemory::HIAI_DFree(_input_buffer2);
-                    _input_buffer2 = nullptr;
-#endif
                     ClearOutData();
                     return HIAI_ERROR;
                 }
@@ -682,10 +552,6 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
                 catch (const std::bad_alloc& e) {
                     hiai::HIAIMemory::HIAI_DFree(_input_buffer1);
                     _input_buffer1 = nullptr;
-#if (INPUT_SIZE == 3)
-                    hiai::HIAIMemory::HIAI_DFree(_input_buffer2);
-                    _input_buffer2 = nullptr;
-#endif
                     ClearOutData();
                     return HIAI_ERROR;
                 }
@@ -708,10 +574,6 @@ HIAI_IMPL_ENGINE_PROCESS("MindInferenceEngine_1", MindInferenceEngine_1, INPUT_S
     //6. release sources
     hiai::HIAIMemory::HIAI_DFree(_input_buffer1);
     _input_buffer1 = nullptr;
-#if (INPUT_SIZE == 3)
-    hiai::HIAIMemory::HIAI_DFree(_input_buffer2);
-    _input_buffer2 = nullptr;
-#endif
     ClearOutData();
     tran_data = nullptr;
     HIAI_ENGINE_LOG(HIAI_IDE_INFO, "[MindInferenceEngine_1] end process!");

@@ -72,8 +72,7 @@ namespace hiai {
         * @param [in]dataPtr: 队列函数指针
         * @param [out]bool: 成功则返回true，否则返回false(例如队列满等）
         */
-        HIAI_LIB_VISIBILITY bool PushData(uint32_t qIndex,
-            const std::shared_ptr<void>& dataPtr) {
+        HIAI_LIB_VISIBILITY bool PushData(uint32_t qIndex, const std::shared_ptr<void>& dataPtr) {
             if (dataPtr == nullptr) {
                 return false;
             }
@@ -834,14 +833,11 @@ namespace hiai {
         }
 
      protected:
-        HIAI_LIB_INTERNAL bool PopAllData(std::vector<
-            std::shared_ptr<void>>& args) {
+        HIAI_LIB_INTERNAL bool PopAllData(std::vector<std::shared_ptr<void>>& args) {
 
             // 从当前所有队列获取数据，若设置自动删除过期数据，则需要将
             // 队里中过期数据过滤
-            auto curTime = std::chrono::time_point_cast<
-                std::chrono::milliseconds>(
-                std::chrono::system_clock::now());
+            auto curTime = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
             std::lock_guard<std::mutex> guard(mutex_);
             for (uint32_t index = 0; index < qumNum_; ++index) {
                 auto iter = multiQueue_.find(index);
@@ -853,20 +849,15 @@ namespace hiai {
                 }
                 auto quePair = (*iter).second->front();
                 if (isAutoDel_) {
-                    std::chrono::milliseconds diffTime(
-                        curTime - quePair.first);
+                    std::chrono::milliseconds diffTime(curTime - quePair.first);
                     while (diffTime.count() >= durationMs_) {
-                        HIAI_ENGINE_LOG("MultiTypeQueue delete queue element "
-                            "when max_duration_time is %u ms "
-                            "and diff time is %d ms",
-                            durationMs_, diffTime.count());
+                        HIAI_ENGINE_LOG("MultiTypeQueue delete queue element when max_duration_time is %u ms and diff time is %d ms", durationMs_, diffTime.count());
                         (*iter).second->pop();
                         if ((*iter).second->empty()) {
                             return false;
                         }
                         quePair = (*iter).second->front();
-                        diffTime = std::chrono::milliseconds(
-                            curTime - quePair.first);
+                        diffTime = std::chrono::milliseconds(curTime - quePair.first);
                     }
                 }
                 args.push_back(quePair.second);
