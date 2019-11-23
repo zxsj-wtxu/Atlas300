@@ -15,6 +15,7 @@ std::mutex map_graphs_lock;
 std::map<uint32_t, std::shared_ptr<dg::DynamicGraph>> map_graphs;
 
 int CreateDynamicGraph(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs);
+int CreateDynamicGraph2(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs);
 
 int CreateGraph(int graphid, unsigned int channelid, const char* sourceurl){
     int id = graphid;
@@ -40,7 +41,7 @@ int CreateGraph(int graphid, unsigned int deviceid, unsigned int channelid, cons
     int id = graphid;
     std::shared_ptr<dg::DynamicGraph> graph = std::make_shared<dg::DynamicGraph>();
     std::string url(sourceurl);
-    id = CreateDynamicGraph(id, deviceid, channelid, url, *graph);
+    id = CreateDynamicGraph2(id, deviceid, channelid, url, *graph);
     map_graphs_lock.lock();
     map_graphs.insert(std::map<uint32_t, std::shared_ptr<dg::DynamicGraph>>::value_type(channelid, graph));
     map_graphs_lock.unlock();
@@ -191,12 +192,110 @@ int CreateDynamicGraph(int graphid, uint32_t deviceid, uint32_t channelid, std::
     g.addEngine(e2);
     g.addEngine(e3);
     g.addEngine(e4);
-    g.addEngine(e5);
+//    g.addEngine(e5);
 
     g.addConnection(dg::connection(e0, 0, e1, 0));
     g.addConnection(dg::connection(e1, 0, e2, 0));
-    g.addConnection(dg::connection(e2, 0, e5, 0));
-    g.addConnection(dg::connection(e5, 0, e3, 0));
+    g.addConnection(dg::connection(e2, 0, e3, 0));
+//    g.addConnection(dg::connection(e2, 0, e5, 0));
+//    g.addConnection(dg::connection(e5, 0, e3, 0));
+    g.addConnection(dg::connection(e3, 0, e4, 0));
+
+    graphs.addGraph(g);
+
+    ret = graphs.createGraph();
+    if (ret != HIAI_OK) {
+        printf("createGraph failed %d\n", ret);
+        return -1;
+    }
+
+    dg::NodeInfo inputNode = std::make_tuple(g, e0, 0);
+    dg::NodeInfo outputNode= std::make_tuple(g, e4, 0);
+
+    ret = graphs.setDataRecvFunctor(outputNode, std::make_shared<CustomDataRecvInterface>(""));
+    if (ret != HIAI_OK) {
+        printf("setDataRecvFunctor failed %d\n", ret);
+        return -1;
+    }
+    ret = graphs.sendData(inputNode, "string", std::make_shared<std::string>());
+    if (ret != HIAI_OK) {
+        printf("sendData failed %d\n", ret);
+        return -1;
+    }
+
+    return id;
+}
+
+int CreateDynamicGraph2(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs){
+    HIAI_StatusT ret;
+    int id = graphid;
+    dg::graph g(id++, deviceid);
+    dg::engine e0("video_decode", id++, 1, dg::engine::HOST);
+    e0.so_name.push_back("./libvideo_decode.so");
+    {
+        dg::AIConfigItem item;
+        item.name = "channel1";
+        item.value= sourceurl;
+        e0.ai_config.items.push_back(item);
+    }
+    {
+        dg::AIConfigItem item;
+        item.name = "channel1_id";
+        item.value= std::to_string(channelid);
+        e0.ai_config.items.push_back(item);
+    }
+
+    dg::engine e1("VDecEngine", id++, 1, dg::engine::DEVICE);
+    e1.so_name.push_back("libVDecEngine.so");
+
+    dg::engine e2("SSDDetection", id++, 1, dg::engine::DEVICE);
+    e2.so_name.push_back("libSSDDetection.so");
+    {
+        dg::AIConfigItem item;
+        item.name = "model";
+        item.value= "../data/models/vgg_ssd_300x300.om";
+        e2.ai_config.items.push_back(item);
+    }
+
+    dg::engine e3("PostSsdResultsEngine", id++, 1, dg::engine::DEVICE);
+    e3.so_name.push_back("libPostSsdResultsEngine.so");
+
+    dg::engine e4("DstEngine", id++, 1, dg::engine::HOST);
+    e4.so_name.push_back("libDstEngine.so");
+    {
+        dg::AIConfigItem item;
+        item.name = "labelPath";
+        item.value= "./imagenet1000_clsidx_to_labels.txt";
+        e4.ai_config.items.push_back(item);
+    }
+
+    dg::engine e5("JpegEncode", id++, 1, dg::engine::DEVICE);
+    e5.so_name.push_back("libJpegEncode.so");
+    {
+        dg::AIConfigItem item;
+        item.name = "init_config";
+        item.value= "";
+        e5.ai_config.items.push_back(item);
+    }
+    {
+        dg::AIConfigItem item;
+        item.name = "passcode";
+        item.value= "";
+        e5.ai_config.items.push_back(item);
+    }
+
+    g.addEngine(e0);
+    g.addEngine(e1);
+    g.addEngine(e2);
+    g.addEngine(e3);
+    g.addEngine(e4);
+//    g.addEngine(e5);
+
+    g.addConnection(dg::connection(e0, 0, e1, 0));
+    g.addConnection(dg::connection(e1, 0, e2, 0));
+    g.addConnection(dg::connection(e2, 0, e3, 0));
+//    g.addConnection(dg::connection(e2, 0, e5, 0));
+//    g.addConnection(dg::connection(e5, 0, e3, 0));
     g.addConnection(dg::connection(e3, 0, e4, 0));
 
     graphs.addGraph(g);

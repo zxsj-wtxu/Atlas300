@@ -36,11 +36,14 @@
 
 #include "common_data_type.h"
 #include "hiaiengine/engine.h"
+#include "hiaiengine/multitype_queue.h"
 #include <atomic>
 #include <mutex>
 #include <thread>
 
 extern "C" {
+#include <unistd.h>
+#include <sys/time.h>
 #include "libavformat/avformat.h"
 }
 

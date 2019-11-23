@@ -57,16 +57,21 @@ void WebServer::start(){
 void WebServer::testPost(Webs *wp)
 {
     WebsKey *s;
-    websSetStatus(wp, 200);
-    websWriteHeaders(wp, -1, 0);
-    websWriteEndHeaders(wp);
+    const char* test = websGetVar(wp, "test", 0);
+    printf("test:%s\n",test);
 
     if (scaselessmatch(wp->method, "POST")) {
         printf("%s\n",wp->input.buf);
-        const char* value = websGetVar(wp, "key", 0);
-        printf("value:%s\n",value);
 
+        websSetStatus(wp, 200);
+        websWriteHeaders(wp, -1, 0);
+        websWriteEndHeaders(wp);
         websWrite(wp, "done\n");
+    }else{
+        websSetStatus(wp, 405);
+        websWriteHeaders(wp, -1, 0);
+        websWriteEndHeaders(wp);
+        websWrite(wp, "Method Not Allowed\n");
     }
 
     websDone(wp);
@@ -241,6 +246,7 @@ int WebServer::init(){
 
 	RegisterActionMethod("device", (void*)HandleDeviceInfoAction);
 	RegisterActionMethod("system", (void*)HandleSystemInfoAction);
+    RegisterActionMethod("testpost", (void*)testPost);
     RegisterActionMethod("test", (void*)HandleTest);
     websDefineJst("myAspTtest", myAspTtest);
 

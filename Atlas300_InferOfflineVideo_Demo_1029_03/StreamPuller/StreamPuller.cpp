@@ -1,41 +1,23 @@
-/**
- * ============================================================================
- *
- * Copyright (C) 2019, Huawei Technologies Co., Ltd. All Rights Reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *   1 Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *
- *   2 Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *
- *   3 Neither the names of the copyright holders nor the names of the
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- * ============================================================================
- */
-
 #include "StreamPuller.h"
 #include "error_code.h"
 #include "hiaiengine/ai_memory.h"
 #include "utils_common.h"
 #include <chrono>
+
+int64_t lastTime = 0;
+
+int StreamPuller::rtsp_client_interrupt_callback(void* arg)
+{
+    int64_t currentTime, lastTime; //当前时间
+    currentTime = av_gettime();
+
+    if ((currentTime - lastTime) > 30000) {
+        printf("rtsp input stream of channel %d timeout in interrrupt callback\n", dev_id);
+        return -1;
+    }
+
+    return 0;
+}
 
 std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamName)
 {
@@ -44,10 +26,10 @@ std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamNa
     av_dict_set(&options, "rtsp_transport", "tcp", 0);
     av_dict_set(&options, "max_delay", "5000000", 0); //最大demuxing延时（微秒）
     av_dict_set(&options, "stimeout", "3000000", 0);
-//    if (!av_dict_get(options, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {
-//        av_dict_set(&options, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
-//    }
-//    av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
+
+    lastTime = av_gettime();
+    formatContext->interrupt_callback.callback = rtsp_client_interrupt_callback; //ffmpeg中断回调函数
+    formatContext->interrupt_callback.opaque = (void *)instance; //ffmpeg中断回调函数参数
 
     int ret = avformat_open_input(&formatContext, streamName.c_str(), nullptr, &options);
     if (nullptr != options) {
@@ -103,19 +85,19 @@ void StreamPuller::getStreamInfo()
 void StreamPuller::pullStreamDataLoop()
 {
     AVPacket pkt;
+    struct timeval start, end;
     while (1) {
+        lastTime = av_gettime();
+        gettimeofday(&start, NULL);
         if (stop || nullptr == pFormatCtx) {
             break;
         }
         av_init_packet(&pkt);
         int ret = av_read_frame(pFormatCtx.get(), &pkt);
         if (ret < 0 ) {
-            if ((ret == AVERROR_EOF || avio_feof(pFormatCtx.get()->pb))) {
-                printf("EOF!exit\n");
-                exit(-1);
-            }
-            if (pFormatCtx.get()->pb && pFormatCtx.get()->pb->error)
-                break;
+            string filename = pFormatCtx.get()->filename;
+            printf("EOF! filename:%s\n",pFormatCtx.get()->filename);
+            pFormatCtx = createFormatContext(filename);
             continue;
         } else if (pkt.stream_index == videoIndex) {
             if (pkt.size <= 0) {
@@ -124,10 +106,7 @@ void StreamPuller::pullStreamDataLoop()
             }
 
             uint8_t* buffer;
-            ret = hiai::HIAIMemory::HIAI_DMalloc(pkt.size, (void*&)buffer,
-                hiai::MALLOC_DEFAULT_TIME_OUT,
-                hiai::HIAI_MEMORY_ATTR_MANUAL_FREE);
-
+            ret = hiai::HIAIMemory::HIAI_DMalloc(pkt.size, (void*&)buffer, hiai::MALLOC_DEFAULT_TIME_OUT, hiai::HIAI_MEMORY_ATTR_MANUAL_FREE);
             if (HIAI_OK != ret) {
                 printf("channel %d HIAI_DMalloc buffer faild\n", channelId);
                 av_packet_unref(&pkt);
@@ -144,6 +123,11 @@ void StreamPuller::pullStreamDataLoop()
             output->info.format = format;
             output->info.isEOS = 0;
 
+            gettimeofday(&end, NULL);
+            long int cast = (end.tv_sec * 1000000 - start.tv_sec * 1000000) + (end.tv_usec - start.tv_usec);
+            if(cast < 40000 && cast > 0){
+                usleep(40000 - cast);
+            }
             HIAI_StatusT ret = SendData(0, "StreamRawData", std::static_pointer_cast<void>(output));
 
             if (ret != HIAI_OK) {
@@ -152,26 +136,24 @@ void StreamPuller::pullStreamDataLoop()
                     printf("channel %d sleep for 1 seconds\n", channelId);
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-            } else {
-//                printf("channel %d pkt.size %d\n", channelId, pkt.size);
             }
 
             av_packet_unref(&pkt);
 
         }
     }
-    std::shared_ptr<StreamRawData> output = std::make_shared<StreamRawData>();
-    output->info.channelId = channelId;
-    output->info.format = format;
-    output->info.isEOS = 1;
-    HIAI_StatusT ret = SendData(0, "StreamRawData", std::static_pointer_cast<void>(output));
-    if (HIAI_OK != ret) {
-        printf("VDecEngine senddata failed! ret = %d\n", ret);
-        return;
-    }
-    printf("channel %d pullStreamDataLoop end of stream\n", channelId);
-    av_init_packet(&pkt);
-    stop = 1;
+//    std::shared_ptr<StreamRawData> output = std::make_shared<StreamRawData>();
+//    output->info.channelId = channelId;
+//    output->info.format = format;
+//    output->info.isEOS = 1;
+//    HIAI_StatusT ret = SendData(0, "StreamRawData", std::static_pointer_cast<void>(output));
+//    if (HIAI_OK != ret) {
+//        printf("VDecEngine senddata failed! ret = %d\n", ret);
+//        return;
+//    }
+//    printf("channel %d pullStreamDataLoop end of stream\n", channelId);
+//    av_init_packet(&pkt);
+//    stop = 1;
 }
 
 void StreamPuller::stopStream()
@@ -212,6 +194,7 @@ HIAI_StatusT StreamPuller::Init(const hiai::AIConfig& config, const std::vector<
     }
     CHECK_RETURN_IF(aimap.count("channel_id") <= 0);
     channelId = std::stoi(aimap["channel_id"]);
+    av_register_all();
     avformat_network_init();
 
     if (aimap.count("stream_name")) {

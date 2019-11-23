@@ -84,10 +84,10 @@ HIAI_StatusT CustomDataRecvInterface::RecvData(const std::shared_ptr<void>& mess
     struct  timeb   stTimeb;
     ftime(&stTimeb);
     ptm = localtime(&stTimeb.time);
-    if(ptm->tm_sec == 59){
+    if((ptm->tm_sec == 59) || 1){
         int current_time = ptm->tm_hour * 60 * 60 + ptm->tm_min * 60 + ptm->tm_sec;
         int diff = current_time - history_time[channelid];
-        if(diff >= 60){
+        if(diff >= 1){
             history_time[channelid] = current_time;
             int count1 = BicycleDetection::getCount1Total(channelid);
             int count2 = BicycleDetection::getCount2Total(channelid);

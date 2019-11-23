@@ -13,4 +13,5 @@ int DestroyAllGraphs();
 int DestroyGraph(unsigned int channelid);
 int CreateGraph(int graphid, unsigned int channelid, const char* sourceurl);
 int CreateGraph(int graphid, unsigned int deviceid, unsigned int channelid, const char *sourceurl);
+
 #endif // GRAPHMANAGER_H
