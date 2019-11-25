@@ -44,6 +44,7 @@
 #include "graphmanager.h"
 #include "HttpService.h"
 #include "BicycleDetection.h"
+#include "hiaiengine/engine.h"
 #include "hiaiengine/c_graph.h"
 #include "webapi.h"
 #include "BoardParams.h"
@@ -91,7 +92,9 @@ HIAI_StatusT CustomDataRecvInterface::RecvData(const std::shared_ptr<void>& mess
             history_time[channelid] = current_time;
             int count1 = BicycleDetection::getCount1Total(channelid);
             int count2 = BicycleDetection::getCount2Total(channelid);
-            LOG_DEBUG("Send %d, Total count1:%d, Total count2:%d\n", channelid, count1, count2);
+//            HIAI_ENGINE_LOG(HIAI_IDE_DEBUG, "[Main] RecvData: Channel id %d, Total count1:%d, Total count2:%d\n", channelid, count1, count2);
+            LOG_DEBUG("[%d-%d-%d %02d:%02d:%02d.%d] Channel id %d, Total count1:%d, Total count2:%d\n",
+                      ptm->tm_year, ptm->tm_mon, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, channelid, count1, count2);
         }
     }
 

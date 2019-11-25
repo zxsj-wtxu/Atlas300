@@ -170,10 +170,8 @@ HIAI_IMPL_ENGINE_PROCESS("VDecEngine", VDecEngine, VD_INPUT_SIZE)
     inputInfo = inputArg->info;
     vdecInMsg.channelId = inputArg->info.channelId;
     if (inputArg->info.isEOS == 1) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[VDecEngine] isEOS is true!");
         vdecInMsg.isEOS = 1;
     } else {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[VDecEngine] isEOS is false!");
         if (inputArg->info.format == H264) {
             memcpy_s(vdecInMsg.video_format, 10, "h264", 4);
         } else {

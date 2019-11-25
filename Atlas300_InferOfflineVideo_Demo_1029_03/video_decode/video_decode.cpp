@@ -76,6 +76,8 @@ const string kRtspTransport = "rtsp_transport"; // rtsp transport
 
 const string kUdp = "udp"; // video format udp
 
+const string kTcp = "tcp"; // video format tcp
+
 const string kBufferSize = "buffer_size"; // buffer size string
 
 const string kMaxBufferSize = "104857600"; // maximum buffer size:100MB
@@ -141,8 +143,7 @@ void VideoDecode::SendFinishedData() {
 
   // send finished data to next engine, use output port:0
   do {
-    hiai_ret = SendData(0, kVideoImageParaType,
-                        static_pointer_cast<void>(video_image_para));
+    hiai_ret = SendData(0, kVideoImageParaType, static_pointer_cast<void>(video_image_para));
     if (hiai_ret == HIAI_QUEUE_FULL) { // check hiai queue is full
       HIAI_ENGINE_LOG("Queue full when send finished data, sleep 10ms");
       usleep(kWait10Milliseconds); // sleep 10 ms
@@ -150,8 +151,7 @@ void VideoDecode::SendFinishedData() {
   } while (hiai_ret == HIAI_QUEUE_FULL); // loop when hiai queue is full
 
   if (hiai_ret != HIAI_OK) {
-    HIAI_ENGINE_LOG(HIAI_ENGINE_RUN_ARGS_NOT_RIGHT,
-                    "Send finished data failed! error code: %d", hiai_ret);
+    HIAI_ENGINE_LOG(HIAI_ENGINE_RUN_ARGS_NOT_RIGHT, "Send finished data failed! error code: %d", hiai_ret);
   }
 }
 
@@ -213,7 +213,7 @@ void VideoDecode::SetDictForRtsp(const string& channel_value,
     HIAI_ENGINE_LOG("Set parameters for %s", channel_value.c_str());
     avformat_network_init();
 
-    av_dict_set(&avdic, kRtspTransport.c_str(), kUdp.c_str(), kNoFlag);
+    av_dict_set(&avdic, kRtspTransport.c_str(), kTcp.c_str(), kNoFlag);
     av_dict_set(&avdic, kBufferSize.c_str(), kMaxBufferSize.c_str(), kNoFlag);
     av_dict_set(&avdic, kMaxDelayStr.c_str(), kMaxDelayValue.c_str(), kNoFlag);
     av_dict_set(&avdic, kTimeoutStr.c_str(), kTimeoutValue.c_str(), kNoFlag);
@@ -292,13 +292,15 @@ bool VideoDecode::InitVideoParams(int videoindex, VideoType &video_type, AVForma
 
 void VideoDecode::UnpackVideo2Image(const string &channel_id) {
   char thread_name_log[kThreadNameLength];
+  AVFormatContext* av_format_context;
   string thread_name = kThreadNameHead + channel_id;
   prctl(PR_SET_NAME, (unsigned long) thread_name.c_str());
   prctl(PR_GET_NAME, (unsigned long) thread_name_log);
   HIAI_ENGINE_LOG("Unpack video to image from:%s, thread name:%s", channel_id.c_str(), thread_name_log);
 
   string channel_value = GetChannelValue(channel_id);
-  AVFormatContext* av_format_context = avformat_alloc_context();
+ARGIN:
+  av_format_context = avformat_alloc_context();
 
   // check open video result
   if (!OpenVideoFromInputChannel(channel_value, av_format_context)) {
@@ -321,7 +323,14 @@ void VideoDecode::UnpackVideo2Image(const string &channel_id) {
 
   AVPacket av_packet;
   // loop to get every frame from video stream
-  while (av_read_frame(av_format_context, &av_packet) == kHandleSuccessful) {
+  while (1) {
+      int ret = av_read_frame(av_format_context, &av_packet);
+      if(ret < 0){
+          printf("EOF, video stream is disconnected.\n");
+          av_bsf_free(&bsf_ctx);
+          avformat_close_input(&av_format_context);
+          goto ARGIN;
+      }
     if (av_packet.stream_index == videoindex) { // check current stream is video
       // send video packet to ffmpeg
       if (av_bsf_send_packet(bsf_ctx, &av_packet) != kHandleSuccessful) {
@@ -366,7 +375,7 @@ void VideoDecode::UnpackVideo2Image(const string &channel_id) {
       }
     }
   }
-
+    printf("FFmpeg video thread exit.\n");
   av_bsf_free(&bsf_ctx); // free AVBSFContext pointer
   avformat_close_input(&av_format_context); // close input video
 
@@ -550,9 +559,9 @@ bool VideoDecode::VerifyChannelValues() {
 
     HIAI_ENGINE_LOG("Display channel1:%s", channel1_.c_str());
 
-    if (!VerifyVideoSourceName(channel1_)) { // verify channel1
-      return false;
-    }
+//    if (!VerifyVideoSourceName(channel1_)) { // verify channel1
+//      return false;
+//    }
   }
 
   // verify channel2 value when channel1 is not empty

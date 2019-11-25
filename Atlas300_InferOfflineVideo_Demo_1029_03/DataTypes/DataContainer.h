@@ -31,28 +31,28 @@ using namespace rapidjson;
 
 #ifndef LOG_DEBUG
 #define LOG_DEBUG(fmt, args...) \
-    do { printf("\033[1m\033[32m[Debug],[FILE]:%s[Func]:%s [Line]:%d [Info]:" \
+    do { printf("\033[1m\033[32m[Debug][FILE]:%s [Func]:%s [Line]:%d [Info]:" \
                 fmt"\033[0m", __FILE__, __FUNCTION__, __LINE__, ##args); \
     } while (0)
 #endif
 
 #ifndef LOG_INFO
 #define LOG_INFO(fmt, args...) \
-    do { printf("\033[1m\033[34m[Info],[FILE]:%s[Func]:%s [Line]:%d [Info]:" \
+    do { printf("\033[1m\033[34m[Info][FILE]:%s[Func]:%s [Line]:%d [Info]:" \
                             fmt"\033[0m",__FILE__, __FUNCTION__, __LINE__, ##args); \
     } while (0)
 #endif
 
 #ifndef LOG_WARN
 #define LOG_WARN(fmt, args...) \
-    do { printf("\033[1m\033[33m[Warn],[FILE]:%s[Func]:%s [Line]:%d [Info]:" \
+    do { printf("\033[1m\033[33m[Warn][FILE]:%s[Func]:%s [Line]:%d [Info]:" \
                             fmt"\033[0m",__FILE__, __FUNCTION__, __LINE__,##args); \
     } while (0)
 #endif
 
 #ifndef LOG_ERROR
 #define LOG_ERROR(fmt, args...) \
-    do { printf("\033[1m\033[31m[Error],[FILE]:%s[Func]:%s [Line]:%d [Info]:" \
+    do { printf("\033[1m\033[31m[Error][FILE]:%s[Func]:%s [Line]:%d [Info]:" \
                             fmt"\033[0m",__FILE__, __FUNCTION__, __LINE__, ##args); \
     } while (0)
 #endif
