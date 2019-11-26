@@ -2392,7 +2392,8 @@ SOURCES += \
     tools/trasher.c \
     tools/uncoded_frame.c \
     tools/yuvcmp.c \
-    tools/zmqsend.c
+    tools/zmqsend.c \
+    StreamDemux/StreamDemux.cpp
 
 INCLUDEPATH+=$$PWD/Common
 INCLUDEPATH+=$$PWD/DataTypes
@@ -4116,7 +4117,8 @@ HEADERS += \
     libswscale/version.h \
     tests/checkasm/aarch64/checkasm.S \
     tests/checkasm/arm/checkasm.S \
-    tests/checkasm/checkasm.h
+    tests/checkasm/checkasm.h \
+    StreamDemux/StreamDemux.h
 
 DISTFILES += \
     graph.config \

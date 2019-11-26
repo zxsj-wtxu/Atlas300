@@ -226,6 +226,7 @@ bool VideoDecode::OpenVideoFromInputChannel(const string &channel_value, AVForma
   AVDictionary* avdic = nullptr;
   SetDictForRtsp(channel_value, avdic);
 
+  av_format_context->flags |= AVIO_FLAG_NONBLOCK;
   int ret_open_input_video = avformat_open_input(&av_format_context, channel_value.c_str(), nullptr, &avdic);
 
   if (ret_open_input_video < kHandleSuccessful) { // check open video result
@@ -301,34 +302,36 @@ void VideoDecode::UnpackVideo2Image(const string &channel_id) {
   string channel_value = GetChannelValue(channel_id);
 ARGIN:
   av_format_context = avformat_alloc_context();
-
   // check open video result
   if (!OpenVideoFromInputChannel(channel_value, av_format_context)) {
+      printf("OpenVideoFromInputChannel failed.\n");
     return;
   }
 
   int videoindex = GetVideoIndex(av_format_context);
   if (videoindex == kInvalidVideoIndex) { // check video index is valid
-    HIAI_ENGINE_LOG( HIAI_ENGINE_RUN_ARGS_NOT_RIGHT, "Video index is -1, current media has no video info, channel id:%s", channel_id.c_str());
+    printf("Video index is -1, current media has no video info, channel id:%s\n", channel_id.c_str());
     return;
   }
 
   AVBSFContext* bsf_ctx;
   VideoType video_type = kInvalidTpye;
-
   // check initialize video parameters result
   if (!InitVideoParams(videoindex, video_type, av_format_context, bsf_ctx)) {
+      printf("InitVideoParams failed.\n");
     return;
   }
 
   AVPacket av_packet;
   // loop to get every frame from video stream
   while (1) {
+      printf("[video decode thread]\n");
       int ret = av_read_frame(av_format_context, &av_packet);
       if(ret < 0){
           printf("EOF, video stream is disconnected.\n");
           av_bsf_free(&bsf_ctx);
           avformat_close_input(&av_format_context);
+          av_format_context = NULL;
           goto ARGIN;
       }
     if (av_packet.stream_index == videoindex) { // check current stream is video

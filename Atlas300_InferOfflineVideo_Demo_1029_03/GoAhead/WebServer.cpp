@@ -144,6 +144,8 @@ void WebServer::HandleDeviceInfoAction(Webs *wp){
         const char* Data = wp->input.buf;
 		printf("input:%s\n",wp->input.buf);
         if(strncmp("Add", Option, 3) == 0){
+            //协议地址：http://192.168.0.12:8081/goform/device?Name=device&Option=Add&Id=0
+            //协议格式：{"DeivceCode":0,"BaseInfo":{"deviceid":"0","sourceurl":"rtsp://192.168.0.218:5555/live/0"},"Areas":{"AreasNum":1,"area0":{"type":1,"pointsnum":4,"name":"bicycle","coordinate_x":{"x0":"736","x1":"1252","x2":"1327","x3":"619"},"coordinate_y":{"y0":"320","y1":"327","y2":"500","y3":"500"}}}}
         	if(BoardParams::Instance()->addDeviceParam(Name, Data) < 0){
         		websWrite(wp, "add device param failed.\n");
         	}else{

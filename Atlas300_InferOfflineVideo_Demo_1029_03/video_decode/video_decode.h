@@ -85,8 +85,7 @@ class VideoDecode : public hiai::Engine {
    * @param [in] model_desc: hiai AI model description
    * @return HIAI_OK: initialize success; HIAI_ERROR:initialize failed
    */
-  HIAI_StatusT Init(const hiai::AIConfig &config,
-                    const std::vector<hiai::AIModelDescription> &model_desc);
+  HIAI_StatusT Init(const hiai::AIConfig &config, const std::vector<hiai::AIModelDescription> &model_desc);
 
   /**
    * @brief HIAI_DEFINE_PROCESS : reload Engine Process
