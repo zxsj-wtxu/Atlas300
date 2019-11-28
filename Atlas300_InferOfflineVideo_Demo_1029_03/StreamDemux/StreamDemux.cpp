@@ -1,10 +1,33 @@
 #include "StreamDemux.h"
+#ifdef SDL
+int StreamDemux::thread_exit = 0;
+int StreamDemux::thread_pause = 0;
+#endif
+
+HIAI_REGISTER_DATA_TYPE("VideoImageInfoT", VideoImageInfoT);
+HIAI_REGISTER_DATA_TYPE("VideoImageParaT", VideoImageParaT);
+HIAI_REGISTER_DATA_TYPE("OutputT", OutputT);
+HIAI_REGISTER_DATA_TYPE("DetectionEngineTransT", DetectionEngineTransT);
 
 StreamDemux::StreamDemux()
 {
-
+	stream_msg = new StreamMessage;
 }
 
+StreamDemux::~StreamDemux()
+{
+#ifdef SDL
+	SDL_Quit();
+#endif
+	delete stream_msg;
+	av_freep(&video_dst_data[0]);
+	av_frame_free(&frame);
+	av_bsf_free(&bsf_ctx);
+	avcodec_free_context(&codec);
+	avformat_close_input(&input_fmt);
+}
+
+#ifdef ATLAS300
 HIAI_StatusT StreamDemux::Init(const hiai::AIConfig &config, const vector<hiai::AIModelDescription> &model_desc) {
     HIAI_ENGINE_LOG("Start process!");
     for (int index = 0; index < config.items_size(); ++index) {
@@ -18,14 +41,188 @@ HIAI_StatusT StreamDemux::Init(const hiai::AIConfig &config, const vector<hiai::
             continue;
         }
     }
+    std::cout << "stream url:" << stream_url << std::endl;
     HIAI_ENGINE_LOG("End process!");
     return HIAI_OK;
 }
 
 HIAI_IMPL_ENGINE_PROCESS("StreamDemux", StreamDemux, INPUT_SIZE) {
-  av_log_set_level(AV_LOG_INFO);
-  return HIAI_OK;
+	av_log_set_level(AV_LOG_INFO);
+    av_register_all();
+    avformat_network_init();
+    pthread_t tid;
+    if (StreamInit() < 0) {
+        return -1;
+    }
+    pthread_create(&tid, NULL, DemuxStream2AtlasPacket, (void*)this);
+    return HIAI_OK;
 }
+
+void StreamDemux::SendImageData(shared_ptr<VideoImageParaT> &video_image_data) {
+    HIAI_StatusT hiai_ret = HIAI_OK;
+
+    if (video_image_data == nullptr) { // the queue is empty and return
+        printf("video_image_data is null.\n");
+        return;
+    }
+
+    do {
+        hiai_ret = SendData(0, "VideoImageParaT", static_pointer_cast<void>(video_image_data));
+        if (hiai_ret == HIAI_QUEUE_FULL) { // check queue is full
+            HIAI_ENGINE_LOG("The queue is full when send image data, sleep 10ms");
+            usleep(10000); // sleep 10 ms
+        }
+    } while (hiai_ret == HIAI_QUEUE_FULL); // loop while queue is full
+
+    if (hiai_ret != HIAI_OK) { // check send data is failed
+        HIAI_ENGINE_LOG(HIAI_ENGINE_RUN_ARGS_NOT_RIGHT, "Send data failed! error code: %d", hiai_ret);
+    }
+}
+
+void StreamDemux::SendImageData(shared_ptr<StreamRawData>& video_image_data) {
+	int hiai_ret = 0;
+
+	if (video_image_data == nullptr) { // the queue is empty and return
+		return;
+	}
+
+	do {
+		hiai_ret = SendData(0, "StreamRawData", static_pointer_cast<void>(video_image_data));
+		if (hiai_ret == HIAI_QUEUE_FULL) { // check queue is full
+			HIAI_ENGINE_LOG("The queue is full when send image data, sleep 10ms");
+            usleep(10000); // sleep 10 ms
+		}
+	} while (hiai_ret == HIAI_QUEUE_FULL); // loop while queue is full
+
+	if (hiai_ret != 0) { // check send data is failed
+		HIAI_ENGINE_LOG(HIAI_ENGINE_RUN_ARGS_NOT_RIGHT, "Send data failed! error code: %d", hiai_ret);
+	}
+}
+
+HIAI_StatusT StreamDemux::PrepareVideoImageParaT(AVPacket& av_packet, std::shared_ptr<VideoImageParaT>& video_image_para){
+    video_image_para = make_shared<VideoImageParaT>();
+    video_image_para->video_image_info.channel_id = channel_id;
+    video_image_para->video_image_info.channel_name = stream_url;
+    video_image_para->video_image_info.is_finished = false;
+    video_image_para->video_image_info.video_type = kH264;
+
+    if (av_packet.size <= 0 || av_packet.size > kAllowedMaxImageMemory) {
+      return HIAI_ERROR;
+    }
+
+    uint8_t* vdec_in_buffer = new (nothrow) uint8_t[av_packet.size];
+    int memcpy_result = memcpy_s(vdec_in_buffer, av_packet.size, av_packet.data, av_packet.size);
+    if (memcpy_result != EOK) { // check memcpy_s result
+      HIAI_ENGINE_LOG( HIAI_ENGINE_RUN_ARGS_NOT_RIGHT, "Fail to copy av_packet data to vdec buffer, memcpy_s result:%d", memcpy_result);
+      delete[] vdec_in_buffer;
+      return HIAI_ERROR;
+    }
+
+    video_image_para->img.data.reset(vdec_in_buffer, default_delete<uint8_t[]>());
+    video_image_para->img.size = av_packet.size;
+
+    return HIAI_OK;
+}
+
+HIAI_StatusT StreamDemux::PrepareStreamRawData(AVPacket& av_packet, std::shared_ptr<StreamRawData>& video_image_data) {
+	uint8_t* buffer;
+	RawDataBufferHigh dataBuffer;
+	int ret = hiai::HIAIMemory::HIAI_DMalloc(av_packet.size, (void*&)buffer, hiai::MALLOC_DEFAULT_TIME_OUT, hiai::HIAI_MEMORY_ATTR_MANUAL_FREE);
+    if (HIAI_OK != ret) {
+        printf("channel %d HIAI_DMalloc buffer faild\n", channel_id);
+        return HIAI_ERROR;
+	}
+
+	memcpy_s(buffer, av_packet.size, av_packet.data, av_packet.size);
+	dataBuffer.data = std::shared_ptr<uint8_t>(buffer, hiai::HIAIMemory::HIAI_DFree);
+	dataBuffer.len_of_byte = av_packet.size;
+	video_image_data = std::make_shared<StreamRawData>();
+	video_image_data->buf = dataBuffer;
+	video_image_data->info.channelId = channel_id;
+	video_image_data->info.format = 0;
+	video_image_data->info.isEOS = 0;
+    return HIAI_OK;
+}
+
+void* StreamDemux::DemuxStream2AtlasPacket(void* arg)
+{
+    StreamDemux* _this = (StreamDemux*)arg;
+    int video_index = _this->video_index;
+    AVFormatContext* input_fmt = _this->input_fmt;
+    AVBSFContext* bsf_ctx = _this->bsf_ctx;
+    int ret;
+    AVPacket pkt;
+    av_init_packet(&pkt);
+    unsigned long mSec = 1;
+    if (_this->isRtspStream(input_fmt->url)) {
+        mSec = 1;
+    }
+    else {
+        mSec = 40;
+    }
+    while(!_this->isStop){
+        milliseconds_sleep(mSec);
+        while (1) {
+            ret = av_read_frame(input_fmt, &pkt);
+            if (ret == AVERROR_EOF) {
+                std::cout << "av_read_frame failed, error:" << ret << std::endl;
+                if (_this->ReopenAVStream(input_fmt) < 0) {
+                    _this->isStop = 1;
+                    break;
+                }
+                continue;
+            }
+            if (pkt.stream_index == video_index)
+                break;
+        }
+        ret = _this->AddDecodeBsfInfo(bsf_ctx, pkt);
+        if (ret != 0) {
+            std::cout << "AddDecodeBsfInfo failed" << std::endl;
+            continue;
+        }
+        std::shared_ptr<VideoImageParaT> output;
+        if (_this->PrepareVideoImageParaT(pkt, output) != HIAI_OK) {
+            std::cout << "PrepareImage failed" << std::endl;
+            continue;
+        }
+
+//        std::shared_ptr<StreamRawData> output;
+//        if (_this->PrepareStreamRawData(pkt, output) != HIAI_OK) {
+//            std::cout << "PrepareImage failed" << std::endl;
+//            continue;
+//        }
+        _this->SendImageData(output);
+        printf("StreamDemux SendImageData, channel:%d.\n",_this->channel_id);
+
+    }
+}
+#else
+int StreamDemux::Init(std::string& stream_url, int channel_id) {
+	this->stream_url = stream_url;
+	this->channel_id = channel_id;
+
+	if (stream_msg->H264StreamMessageQueueInit(25) < 0) {
+		return -1;
+	}
+	if (StreamInit() < 0) {
+		return -1;
+	}
+	return 0;
+}
+
+int StreamDemux::Process() {
+#ifdef SDL
+	if (SdlInit(codec, sdlTexture, sdlRect, sdlRenderer) < 0) {
+		return -1;
+	}
+#endif
+	//StreamDemux::DemuxStream2Packet((void*)this);
+	pthread_t tid;
+	pthread_create(&tid, NULL, DemuxStream2Packet, (void*)this);
+	//std::thread thread(&StreamDemux::DemuxStream2Packet, this);
+}
+#endif
+
 
 int StreamDemux::AddDecodeBsfInfo(AVBSFContext* bsf_ctx, AVPacket& pkt){
     int ret = 0;
@@ -61,56 +258,29 @@ void StreamDemux::GetImageFromFrame(uint8_t *dst_data[4], int dst_linesizes[4], 
     av_image_copy(dst_data, dst_linesizes, (const uint8_t**)(frame->data), frame->linesize, codec->pix_fmt, frame->width, frame->height);
 }
 
-void StreamDemux::SendImageData(shared_ptr<StreamRawData>& video_image_data) {
-  HIAI_StatusT hiai_ret = HIAI_OK;
-
-  if (video_image_data == nullptr) { // the queue is empty and return
-    return;
-  }
-
-  do {
-    hiai_ret = SendData(0, "StreamRawData", static_pointer_cast<void>(video_image_data));
-    if (hiai_ret == HIAI_QUEUE_FULL) { // check queue is full
-      HIAI_ENGINE_LOG("The queue is full when send image data, sleep 10ms");
-      usleep(kWait10Milliseconds); // sleep 10 ms
-    }
-  } while (hiai_ret == HIAI_QUEUE_FULL); // loop while queue is full
-
-  if (hiai_ret != HIAI_OK) { // check send data is failed
-    HIAI_ENGINE_LOG(HIAI_ENGINE_RUN_ARGS_NOT_RIGHT, "Send data failed! error code: %d", hiai_ret);
-  }
-}
-
-int StreamDemux::PrepareImage(AVPacket& av_packet, std::shared_ptr<StreamRawData>& video_image_data){
-    uint8_t* buffer;
-    RawDataBufferHigh dataBuffer;
-    int ret = hiai::HIAIMemory::HIAI_DMalloc(av_packet.size, (void*&)buffer, hiai::MALLOC_DEFAULT_TIME_OUT, hiai::HIAI_MEMORY_ATTR_MANUAL_FREE);
-    if (HIAI_OK != ret) {
-        printf("channel %d HIAI_DMalloc buffer faild\n", channelId);
-        return -1;
-    }
-
-    memcpy_s(buffer, av_packet.size, av_packet.data, av_packet.size);
-    dataBuffer.data = std::shared_ptr<uint8_t>(buffer, hiai::HIAIMemory::HIAI_DFree);
-    dataBuffer.len_of_byte = av_packet.size;
-    video_image_data = std::make_shared<StreamRawData>();
-    video_image_data->buf = dataBuffer;
-    video_image_data->info.channelId = channel_id;
-    video_image_data->info.format = 0;
-    video_image_data->info.isEOS = 0;
-    return ret;
-}
-
-void StreamDemux::DemuxStream2Packet(){
+void* StreamDemux::DemuxStream2Packet(void* arg){
+	StreamDemux* _this = (StreamDemux*)arg;
+	int video_index = _this->video_index;
+	AVFormatContext* input_fmt = _this->input_fmt;
+	AVBSFContext* bsf_ctx = _this->bsf_ctx;
+	int ret;
     AVPacket pkt;
     av_init_packet(&pkt);
-    while(!isStop){
+	unsigned long mSec = 1;
+	if (_this->isRtspStream(input_fmt->url)) {
+		mSec = 1;
+	}
+	else {
+		mSec = 40;
+	}
+    while(!_this->isStop){
+		milliseconds_sleep(mSec);
         while (1) {
             ret = av_read_frame(input_fmt, &pkt);
             if (ret == AVERROR_EOF) {
                 std::cout << "av_read_frame failed, error:" << ret << std::endl;
-                if (ReopenAVStream(input_fmt) < 0) {
-                    isStop = 1;
+                if (_this->ReopenAVStream(input_fmt) < 0) {
+					_this->isStop = 1;
                     break;
                 }
                 continue;
@@ -118,24 +288,67 @@ void StreamDemux::DemuxStream2Packet(){
             if (pkt.stream_index == video_index)
                 break;
         }
-        ret = AddDecodeBsfInfo(bsf_ctx, pkt);
+        ret = _this->AddDecodeBsfInfo(bsf_ctx, pkt);
         if (ret != 0) {
             std::cout << "AddDecodeBsfInfo failed" << std::endl;
             continue;
         }
-        std::shared_ptr<StreamRawData> output;
-        if(PrepareImage(pkt, output) != 0){
-            std::cout << "PrepareImage failed" << std::endl;
+		_this->stream_msg->H264StreamMessageQueueSend(pkt);
+		//if (isSendMessage) {
+		//	stream_msg->H264StreamMessageQueueSend(pkt);
+		//}
+    }
+}
+
+void StreamDemux::DemuxStream2YUV()
+{
+	int ret;
+	AVPacket pkt;
+	av_init_packet(&pkt);
+	while (!isStop) {
+		while (1) {
+			ret = av_read_frame(input_fmt, &pkt);
+			if (ret == AVERROR_EOF) {
+				std::cout << "av_read_frame failed, error:" << ret << std::endl;
+				if (ReopenAVStream(input_fmt) < 0) {
+					isStop = 1;
+					break;
+				}
+				continue;
+			}
+			if (pkt.stream_index == video_index)
+				break;
+		}
+		ret = AddDecodeBsfInfo(bsf_ctx, pkt);
+		if (ret != 0) {
+			std::cout << "AddDecodeBsfInfo failed" << std::endl;
+			continue;
+		}
+        ret = DecodePacket(codec, pkt, frame);
+        if (ret != 0) {
+            std::cout << "DecodePacket failed" << std::endl;
             continue;
         }
-        SendImageData(output);
-//        ret = DecodePacket(codec, pkt, frame);
-//        if (ret != 0) {
-//            std::cout << "DecodePacket failed" << std::endl;
-//            continue;
-//        }
-//        GetImageFromFrame(video_dst_data, video_dst_linesize, AVFrame* frame);
-    }
+        GetImageFromFrame(video_dst_data, video_dst_linesize, frame);
+
+#ifdef SDL
+		SDLShowYUV(video_dst_data, video_dst_linesize);
+#endif
+	}
+}
+
+int StreamDemux::GetDemuxStream(int vencchn, unsigned char*& pdataOut, unsigned int& framesize, void* pArg)
+{
+	StreamDemux* _this = (StreamDemux*)pArg;
+	if (_this == nullptr) return -1;
+	return _this->stream_msg->H264StreamMessageQueueRecv(pdataOut, framesize);;
+}
+
+int StreamDemux::StartDemuxStream(int vencchn, void* pArg)
+{
+	StreamDemux* _this = (StreamDemux*)pArg;
+	_this->stream_msg->H264StreamMessageRefresh();
+	return 0;
 }
 
 int StreamDemux::StreamInit(){
@@ -196,7 +409,6 @@ void StreamDemux::setRtspDict(AVDictionary*& options) {
 
 int StreamDemux::ReopenAVStream(AVFormatContext*& fmt) {
     int index;
-    AVCodecID codec_id_new;
     std::string url = fmt->url;
     AVDictionary* options = NULL;
     AVInputFormat* input_fromat = fmt->iformat;
@@ -224,6 +436,7 @@ int StreamDemux::AVStreamInit(AVFormatContext*& fmt, AVCodecID& codec_id, int& v
     //打开视频流
     AVDictionary* options = NULL;
     if (isRtspStream(filename)) {
+        std::cout << "open "<<filename<<" resource" << std::endl;
         setRtspDict(options);
     }
 
@@ -353,3 +566,65 @@ int StreamDemux::AVDecoderH264Init(AVCodecContext*& codec, AVFormatContext* fmt,
 
     return 0;
 }
+
+#ifdef SDL
+int StreamDemux::sfp_refresh_thread(void* opaque) {
+	thread_exit = 0;
+	thread_pause = 0;
+
+	while (!thread_exit) {
+		if (!thread_pause) {
+			SDL_Event event;
+			event.type = SFM_REFRESH_EVENT;
+			SDL_PushEvent(&event);
+		}
+		SDL_Delay(40);
+	}
+	thread_exit = 0;
+	thread_pause = 0;
+	//Break
+	SDL_Event event;
+	event.type = SFM_BREAK_EVENT;
+	SDL_PushEvent(&event);
+
+	return 0;
+}
+void StreamDemux::SDLShowYUV(uint8_t* video_dst_data[4], int video_dst_linesize[4]){
+    SDL_UpdateYUVTexture(sdlTexture, &sdlRect, video_dst_data[0], video_dst_linesize[0],
+        video_dst_data[1], video_dst_linesize[1], video_dst_data[2], video_dst_linesize[2]);
+    SDL_RenderClear(sdlRenderer);
+    SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+    SDL_RenderPresent(sdlRenderer);
+}
+
+/*
+ * 功能：初始化SDL
+ */
+int StreamDemux::SdlInit(AVCodecContext* codec, SDL_Texture*& sdlTexture, SDL_Rect& sdlRect, SDL_Renderer*& sdlRenderer) {
+    int screen_w = 0, screen_h = 0;
+    SDL_Window* screen;
+	SDL_Thread* video_tid;
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+        printf("Could not initialize SDL - %s\n", SDL_GetError());
+        return -1;
+    }
+    screen_w = codec->width;
+    screen_h = codec->height;
+    screen = SDL_CreateWindow("Simplest ffmpeg player's Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        screen_w, screen_h,SDL_WINDOW_OPENGL);
+    if (!screen) {
+        printf("SDL: could not create window - exiting:%s\n", SDL_GetError());
+        return -1;
+    }
+    sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
+    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, codec->width, codec->height);
+    sdlRect.x = 0;
+    sdlRect.y = 0;
+    sdlRect.w = screen_w;
+    sdlRect.h = screen_h;
+
+	video_tid = SDL_CreateThread(sfp_refresh_thread, NULL, NULL);
+    return 0;
+}
+#endif

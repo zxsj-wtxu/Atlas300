@@ -156,10 +156,14 @@ int main(int argc, char* argv[])
         showUsage();
         return 0;
     }
-    WebServerInit();
-    BoardParams::Instance()->initLoadParam("device");
+//    WebServerInit();
+//    BoardParams::Instance()->initLoadParam("device");
 
-    WebServerStart();
+//    WebServerStart();
+    std::shared_ptr<dg::DynamicGraph> graph = std::make_shared<dg::DynamicGraph>();
+    std::string url("1.mp4");
+    int id = CreateDynamicGraph3(id, deviceid, 0, url, *graph);
+
     // cd to directory of main
     char* dirc = strdup(argv[0]);
     if (dirc != NULL) {
@@ -186,5 +190,6 @@ int main(int argc, char* argv[])
     }
     printf("[main] destroy graph-%u done\n", GRAPH_ID);
     DestroyAllGraphs();
+
     return 0;
 }

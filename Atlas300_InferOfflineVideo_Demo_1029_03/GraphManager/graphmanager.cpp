@@ -1,11 +1,5 @@
 #include "graphmanager.h"
-#include "DataRecv.h"
-#include "hiaiengine/api.h"
-#include "DynamicGraph.h"
-#include "CommandLine.h"
-#include "CommandParser.h"
-#include <map>
-#include <mutex>
+
 #define DEVICE_COUNT 4
 #define CORE_MAX    6
 std::mutex deviceid_lock;
@@ -13,10 +7,6 @@ uint32_t deviceid_[DEVICE_COUNT] = {0};
 
 std::mutex map_graphs_lock;
 std::map<uint32_t, std::shared_ptr<dg::DynamicGraph>> map_graphs;
-
-int CreateDynamicGraph(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs);
-int CreateDynamicGraph2(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs);
-int CreateDynamicGraph3(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs);
 
 int CreateGraph(int graphid, unsigned int channelid, const char* sourceurl){
     int id = graphid;
@@ -325,34 +315,44 @@ int CreateDynamicGraph2(int graphid, uint32_t deviceid, uint32_t channelid, std:
 }
 int CreateDynamicGraph3(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs){
     HIAI_StatusT ret;
-    int id = graphid;
-    dg::graph g(id++, deviceid);
-    dg::engine e0("StreamDemux", id++, 1, dg::engine::HOST);
-    e0.so_name.push_back("./libStreamDemux.so");
-    {
-        dg::AIConfigItem item;
-        item.name = "stream_url";
-        item.value= sourceurl;
-        e0.ai_config.items.push_back(item);
-    }
-    {
-        dg::AIConfigItem item;
-        item.name = "channel_id";
-        item.value= std::to_string(channelid);
-        e0.ai_config.items.push_back(item);
+    int id = 100;
+    dg::graph g(id++, 0);
+
+    std::vector<dg::engine> engines;
+
+    for(int i=0; i<16; i++){
+        {
+            dg::engine e("StreamDemux", id++, 1, dg::engine::HOST);
+            e.so_name.push_back("./libStreamDemux.so");
+            {
+                dg::AIConfigItem item;
+                item.name = "stream_url";
+                item.value= sourceurl;
+                e.ai_config.items.push_back(item);
+            }
+            {
+                dg::AIConfigItem item;
+                item.name = "channel_id";
+                item.value= std::to_string(i);
+                e.ai_config.items.push_back(item);
+            }
+            streamer_engines.insert(std::map<uint32_t, dg::engine>::value_type(i, e));
+            input_nodes.insert(std::map<uint32_t, dg::NodeInfo>::value_type(i, std::make_tuple(g, e, 0)));
+            g.addEngine(e);
+        }
+        {
+            dg::engine e("object_detection", id++, 1, dg::engine::DEVICE);
+            e.so_name.push_back("libobject_detection.so");
+            vdec_engines.insert(std::map<uint32_t, dg::engine>::value_type(i, e));
+            g.addEngine(e);
+        }
+        g.addConnection(dg::connection(streamer_engines[i], 0, vdec_engines[i], 0));
+        g.addConnection(dg::connection(vdec_engines[i], 0, vdec_engines[i], 0));
     }
 
-    dg::engine e1("VDecEngine", id++, 1, dg::engine::DEVICE);
-    e1.so_name.push_back("libVDecEngine.so");
     dg::engine e2("DstEngine", id++, 1, dg::engine::HOST);
-    e4.so_name.push_back("libDstEngine.so");
-
-    g.addEngine(e0);
-    g.addEngine(e1);
+    e2.so_name.push_back("libDstEngine.so");
     g.addEngine(e2);
-
-    g.addConnection(dg::connection(e0, 0, e1, 0));
-    g.addConnection(dg::connection(e1, 0, e2, 0));
 
     graphs.addGraph(g);
 
@@ -362,7 +362,6 @@ int CreateDynamicGraph3(int graphid, uint32_t deviceid, uint32_t channelid, std:
         return -1;
     }
 
-    dg::NodeInfo inputNode = std::make_tuple(g, e0, 0);
     dg::NodeInfo outputNode= std::make_tuple(g, e2, 0);
 
     ret = graphs.setDataRecvFunctor(outputNode, std::make_shared<CustomDataRecvInterface>(""));
@@ -370,11 +369,14 @@ int CreateDynamicGraph3(int graphid, uint32_t deviceid, uint32_t channelid, std:
         printf("setDataRecvFunctor failed %d\n", ret);
         return -1;
     }
-    ret = graphs.sendData(inputNode, "string", std::make_shared<std::string>());
-    if (ret != HIAI_OK) {
-        printf("sendData failed %d\n", ret);
-        return -1;
-    }
 
+    std::map<uint32_t, dg::NodeInfo>::iterator it = input_nodes.begin();
+    for(it; it != input_nodes.end(); it++){
+        ret = graphs.sendData(it->second, "string", std::make_shared<std::string>());
+        if (ret != HIAI_OK) {
+            printf("sendData failed %d\n", ret);
+            return -1;
+        }
+    }
     return id;
 }

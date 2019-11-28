@@ -88,7 +88,7 @@ const string kMaxDelayValue = "100000000"; // maximum delay time:100s
 
 const string kTimeoutStr = "stimeout"; // timeout string
 
-const string kTimeoutValue = "5000000"; // timeout:5s
+const string kTimeoutValue = "10000"; // timeout:5s
 
 const string kPktSize = "pkt_size"; // ffmpeg pakect size string
 

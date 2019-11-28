@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  *
- * Copyright (C) 2019, Huawei Technologies Co., Ltd. All Rights Reserved.
+ * Copyright (C) 2018, Hisilicon Technologies Co., Ltd. All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,39 +30,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * ============================================================================
  */
-#ifndef ATLASSAMPLES_VDECENGINE_H
-#define ATLASSAMPLES_VDECENGINE_H
 
-// #include "app_common.h"
-#include "common_data_type.h"
-#include "dvpp/idvppapi.h"
-#include "dvpp/vdec_hiai.h"
-#include "hiaiengine/engine.h"
-#include "sdk-ezdvpp/dvpp_process.h"
+#ifndef HIAI_DATA_SP_SON_H_
+#define HIAI_DATA_SP_SON_H_
 
-#define VD_INPUT_SIZE 1
-#define VD_OUTPUT_SIZE 1
+#include <string>
+#include "hiaiengine/data_type.h"
+#include "hiaiengine/data_type_reg.h"
 
-class VDecEngine : public hiai::Engine {
-public:
-    VDecEngine() {}
-    ~VDecEngine();
-    HIAI_StatusT Init(const hiai::AIConfig& config,
-        const std::vector<hiai::AIModelDescription>& model_desc);
+class HiaiDataSpSon : public HIAI_DATA_SP {
+ public:
+  /**
+   * @brief HIAI_DATA_SP_SON constructor
+   */
+  HiaiDataSpSon(){
+    channel_name_ = "";
+    channel_id_ = "";
+  }
 
-    HIAI_DEFINE_PROCESS(VD_INPUT_SIZE, VD_OUTPUT_SIZE)
+  /**
+    * @brief HIAI_DATA_SP_SON destructor
+    */
+  ~HiaiDataSpSon(){
+  }
 
-    HIAI_StatusT Hfbc2YuvOld(FRAME* frame, vpc_in_msg& vpcInMsg);
+  std::string channel_name_;
 
-private:
-    static void frameCallback(FRAME* frame, void* hiai_data);
-
-    IDVPPAPI* pVdecHandle = NULL;
-    IDVPPAPI* pDvppHandle = NULL;
-    vdec_in_msg vdecInMsg;
-    StreamInfo inputInfo;
-    uint64_t frameId = 0;
-    time_pair stamps;
+  std::string channel_id_;
 };
 
-#endif //ATLASSAMPLES_VDECENGINE_H
+#endif /* HIAI_DATA_SP_SON_H_ */

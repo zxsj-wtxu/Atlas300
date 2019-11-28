@@ -6,12 +6,16 @@ include_directories(${PROJECT_SRC_ROOT}/../Common/)
 include_directories(${DDK_OPENCV_INCLUDE_DIRS})
 aux_source_directory(${PROJECT_SRC_ROOT}/../Common/DvppJpegEncode DvppJpegEncode_SRC)
 
-message(${DDK_DEVICE_LIBRARIES})
-message(${DDK_DEVICE_OPENCV_LIBRARYS})
 aux_source_directory(${PROJECT_SRC_ROOT}/VDecEngine VDecEngine_SRC)
 add_library(VDecEngine SHARED ${VDecEngine_SRC})
 target_include_directories(VDecEngine PUBLIC ${PROJECT_SRC_ROOT}/VDecEngine)
 target_link_libraries(VDecEngine ${DDK_DEVICE_LIBRARIES})
+
+aux_source_directory(${PROJECT_SRC_ROOT}/object_detection object_detection_SRC)
+aux_source_directory(${PROJECT_SRC_ROOT}/sdk-ezdvpp sdk-ezdvpp_SRC)
+add_library(object_detection SHARED ${object_detection_SRC} ${sdk-ezdvpp_SRC})
+target_include_directories(object_detection PUBLIC ${PROJECT_SRC_ROOT}/object_detection ${PROJECT_SRC_ROOT})
+target_link_libraries(object_detection ${DDK_DEVICE_LIBRARIES})
 
 aux_source_directory(${PROJECT_SRC_ROOT}/SSDDetection SSDDetection_SRC)
 add_library(SSDDetection SHARED ${SSDDetection_SRC})
