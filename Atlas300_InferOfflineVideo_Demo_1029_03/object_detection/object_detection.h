@@ -151,6 +151,7 @@ HIAI_DEFINE_PROCESS(INPUT_SIZE, OUTPUT_SIZE)
   void ObjectDetectInference();
 
   void SendDeviceStreamParam();
+  void SendDeviceStreamParam(ImageData<u_int8_t>& img);
   /**
    * @brief : handle input data have is_finished flag
    * @param [in] video_image: the input video frame data

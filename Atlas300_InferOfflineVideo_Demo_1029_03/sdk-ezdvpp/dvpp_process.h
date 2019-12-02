@@ -73,8 +73,7 @@ public:
      * @param [out]DvppOutput *output_data :dvpp output buffer and size
      * @return  enum DvppErrorCode
      */
-    int DvppOperationProc(const char *input_buf, int input_size,
-                          DvppOutput *output_data);
+    int DvppOperationProc(const char *input_buf, int input_size, DvppOutput *output_data);
 
     /**
      * @brief Dvpp decode jpeg and change jpeg to yuv

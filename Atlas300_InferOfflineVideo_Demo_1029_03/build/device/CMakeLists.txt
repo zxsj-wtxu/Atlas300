@@ -7,8 +7,9 @@ include_directories(${DDK_OPENCV_INCLUDE_DIRS})
 aux_source_directory(${PROJECT_SRC_ROOT}/../Common/DvppJpegEncode DvppJpegEncode_SRC)
 
 aux_source_directory(${PROJECT_SRC_ROOT}/VDecEngine VDecEngine_SRC)
-add_library(VDecEngine SHARED ${VDecEngine_SRC})
-target_include_directories(VDecEngine PUBLIC ${PROJECT_SRC_ROOT}/VDecEngine)
+aux_source_directory(${PROJECT_SRC_ROOT}/sdk-ezdvpp sdk-ezdvpp_SRC)
+add_library(VDecEngine SHARED ${VDecEngine_SRC} ${sdk-ezdvpp_SRC})
+target_include_directories(VDecEngine PUBLIC ${PROJECT_SRC_ROOT}/VDecEngine ${PROJECT_SRC_ROOT})
 target_link_libraries(VDecEngine ${DDK_DEVICE_LIBRARIES})
 
 aux_source_directory(${PROJECT_SRC_ROOT}/object_detection object_detection_SRC)

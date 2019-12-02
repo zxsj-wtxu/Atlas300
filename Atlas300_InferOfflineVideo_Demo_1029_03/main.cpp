@@ -160,9 +160,12 @@ int main(int argc, char* argv[])
 //    BoardParams::Instance()->initLoadParam("device");
 
 //    WebServerStart();
-    std::shared_ptr<dg::DynamicGraph> graph = std::make_shared<dg::DynamicGraph>();
     std::string url("1.mp4");
-    int id = CreateDynamicGraph3(id, deviceid, 0, url, *graph);
+    int id = 100;
+    id = CreateMuiltEngineGraph(100, 0, 0, url.c_str());
+//    id = CreateMuiltEngineGraph(200, 1, 16, url.c_str());
+//    id = CreateMuiltEngineGraph(300, 2, 32, url.c_str());
+//    id = CreateMuiltEngineGraph(400, 3, 48, url.c_str());
 
     // cd to directory of main
     char* dirc = strdup(argv[0]);

@@ -81,6 +81,28 @@ HIAI_StatusT VDecEngine::Hfbc2YuvOld(FRAME* frame, vpc_in_msg& vpcInMsg)
 {
     if (pDvppHandle != NULL) {
         dvppapi_ctl_msg dvppApiCtlMsg;
+
+        //获取缩放后的参数
+//        resize_param_in_msg resize_in_param;
+//        resize_param_out_msg resize_out_param;
+//        resize_in_param.src_width = frame->realWidth;
+//        resize_in_param.src_high = frame->realHeight;
+//        resize_in_param.hmax = frame->realWidth-1;
+//        resize_in_param.hmin = 0;
+//        resize_in_param.vmax = frame->realHeight-1;
+//        resize_in_param.vmin = 0;
+//        resize_in_param.dest_width = 300;
+//        resize_in_param.dest_high = 300;
+//        {
+//            dvppapi_ctl_msg dvppApiCtlMsg;
+//            dvppApiCtlMsg.in = (void *)(&resize_in_param);
+//            dvppApiCtlMsg.out = (void *)(&resize_out_param);
+//            if (DvppCtl(pDvppHandle, DVPP_CTL_TOOL_CASE_GET_RESIZE_PARAM, &dvppApiCtlMsg) != 0) {
+//                printf("call DVPP_CTL_TOOL_CASE_GET_RESIZE_PARAM process faild!\n");
+//                return HIAI_ERROR;
+//            }
+//        }
+
         vpcInMsg.format = 0; //YUV420_SEMI_PLANNAR=0
         vpcInMsg.rank = 1; //nv12 =0 ,nv21 =1
         vpcInMsg.bitwidth = frame->bitdepth;
@@ -98,6 +120,13 @@ HIAI_StatusT VDecEngine::Hfbc2YuvOld(FRAME* frame, vpc_in_msg& vpcInMsg)
         vpcInMsg.rdma.luma_payload_stride = frame->stride_payload;
         vpcInMsg.rdma.chroma_payload_stride = frame->stride_payload;
         vpcInMsg.cvdr_or_rdma = 0;
+
+//        vpcInMsg.hmax = resize_out_param.hmax;
+//        vpcInMsg.hmin = resize_out_param.hmin;
+//        vpcInMsg.vmax = resize_out_param.vmax;
+//        vpcInMsg.vmin = resize_out_param.vmin;
+//        vpcInMsg.vinc = resize_out_param.vinc;
+//        vpcInMsg.hinc = resize_out_param.hinc;
         vpcInMsg.hmax = frame->realWidth - 1;
         vpcInMsg.hmin = 0;
         vpcInMsg.vmax = frame->realHeight - 1;
@@ -121,6 +150,7 @@ HIAI_StatusT VDecEngine::Hfbc2YuvOld(FRAME* frame, vpc_in_msg& vpcInMsg)
             HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[VDecEngine::Hfbc2YuvOld] call dvppctl fail\n");
             return HIAI_ERROR;
         }
+
     } else {
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[VDecEngine::Hfbc2YuvOld] pDvppHandle is NULL\n");
         return HIAI_ERROR;
@@ -141,15 +171,15 @@ void VDecEngine::frameCallback(FRAME* frame, void* hiai_data)
 
     vpc_in_msg vpcInMsg;
     vedcPtr->Hfbc2YuvOld(frame, vpcInMsg);
+
     std::shared_ptr<DeviceStreamData> out = std::make_shared<DeviceStreamData>();
     out->info = vedcPtr->inputInfo;
     out->info.frameId = vedcPtr->frameId++;
     out->info.isEOS = 0;
-    out->imgOrigin.width = frame->realWidth;
-    out->imgOrigin.height = frame->realHeight;
-    out->imgOrigin.heightAligned = frame->height;
-    out->imgOrigin.widthAligned = frame->width;
-
+    out->imgOrigin.width = dvppToJpgPara.resolution.width;
+    out->imgOrigin.height = dvppToJpgPara.resolution.height;
+    out->imgOrigin.heightAligned = dvppToJpgPara.resolution.height;
+    out->imgOrigin.widthAligned = dvppToJpgPara.resolution.width;
     out->imgOrigin.buf.data = std::shared_ptr<uint8_t>((uint8_t*)vpcInMsg.out_buffer, HIAI_DVPP_DFree);
     out->imgOrigin.buf.len_of_byte = vpcInMsg.out_buffer_1_size;
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &vedcPtr->stamps.second);

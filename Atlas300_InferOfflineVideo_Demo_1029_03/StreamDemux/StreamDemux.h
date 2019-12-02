@@ -75,7 +75,7 @@ public:
     static int StartDemuxStream(int vencchn, void* pArg);
 private:
     int isStop = 0;
-    int channel_id = -1;
+    unsigned int channel_id = -1;
     std::string stream_url;
 	std::mutex message_status_mutex;
 

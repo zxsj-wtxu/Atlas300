@@ -63,13 +63,8 @@ HIAI_StatusT DvppJpegEncode::Encode(JpegEncodeIn& jpegInData, JpegEncodeOut& enc
     inData.heightAligned = jpegInData.inHeight;
     inData.format = jpegInData.format;
     inData.level = jpegInData.level;
-    printf("indata is %d %d %d %x\n", jpegInData.inWidth, jpegInData.inHeight, 
-        jpegInData.inBufferSize, jpegInData.inBufferPtr.get()); 
-    inData.stride = inData.format <= JPGENC_FORMAT_YUYV ? ALIGN_UP(inData.width * NUMBER_2, ALIGN_16) :
-        ALIGN_UP(inData.width, ALIGN_16);
-    inData.bufSize = inData.format <= JPGENC_FORMAT_YUYV ? 
-        ALIGN_UP(inData.stride * inData.heightAligned, PAGE_SIZE) : 
-        ALIGN_UP(inData.stride * inData.heightAligned * NUMBER_3 / NUMBER_2, PAGE_SIZE);
+    inData.stride = inData.format <= JPGENC_FORMAT_YUYV ? ALIGN_UP(inData.width * NUMBER_2, ALIGN_16) : ALIGN_UP(inData.width, ALIGN_16);
+    inData.bufSize = inData.format <= JPGENC_FORMAT_YUYV ?  ALIGN_UP(inData.stride * inData.heightAligned, PAGE_SIZE) :  ALIGN_UP(inData.stride * inData.heightAligned * NUMBER_3 / NUMBER_2, PAGE_SIZE);
     inData.buf = (unsigned char*)ALIGN_UP((uint64_t)jpegInData.inBufferPtr.get(), ALIGN_128);
     
     dvppapi_ctl_msg dvppApiCtlMsg;

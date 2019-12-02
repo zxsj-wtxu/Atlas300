@@ -66,8 +66,7 @@ ascend::utils::DvppProcess::~DvppProcess() {
     // destructor
 }
 
-int DvppProcess::DvppOperationProc(const char *input_buf, int input_size,
-                                   DvppOutput *output_data) {
+int DvppProcess::DvppOperationProc(const char *input_buf, int input_size, DvppOutput *output_data) {
     int ret = kDvppOperationOk;
 
     // yuv change to jpg

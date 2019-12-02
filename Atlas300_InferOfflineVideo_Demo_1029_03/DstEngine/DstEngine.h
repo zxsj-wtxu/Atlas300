@@ -42,22 +42,232 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui.hpp"
 #include "bicyclecommon.h"
-
+#include "hiaiengine/multitype_queue.h"
 #define DST_INPUT_SIZE 1
 #define DST_OUTPUT_SIZE 1
 
 class DstEngine : public hiai::Engine {
 public:
+    DstEngine();
     HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
 
     HIAI_DEFINE_PROCESS(DST_INPUT_SIZE, DST_OUTPUT_SIZE)
 private:
     // process the classify result
+    HIAI_StatusT ProcessResult(int output_port, const std::shared_ptr<DeviceStreamData>& inputArg);
     HIAI_StatusT ProcessResult(const std::string& resultFileTxt, const std::shared_ptr<DeviceStreamData>& inputArg);
 
-    // label file path
-    string labelPath;
-    int imageid = 0;
+    hiai::MultiTypeQueue input_que_;
 };
+
+
+#define MULTI_INPUT_ARG_PUSH(index) \
+    std::shared_ptr<DeviceStreamData> _multi_input_##index; \
+    input_que_.PushData(index, arg##index) \
+
+#define MULTI_INPUT_ARG_PUSH_1 \
+    MULTI_INPUT_ARG_PUSH(0); \
+
+#define MULTI_INPUT_ARG_PUSH_2 \
+    MULTI_INPUT_ARG_PUSH_1 \
+    MULTI_INPUT_ARG_PUSH(1); \
+
+#define MULTI_INPUT_ARG_PUSH_3 \
+    MULTI_INPUT_ARG_PUSH_2 \
+    MULTI_INPUT_ARG_PUSH(2); \
+
+#define MULTI_INPUT_ARG_PUSH_4 \
+    MULTI_INPUT_ARG_PUSH_3 \
+    MULTI_INPUT_ARG_PUSH(3); \
+
+#define MULTI_INPUT_ARG_PUSH_5 \
+    MULTI_INPUT_ARG_PUSH_4 \
+    MULTI_INPUT_ARG_PUSH(4); \
+
+#define MULTI_INPUT_ARG_PUSH_6 \
+    MULTI_INPUT_ARG_PUSH_5 \
+    MULTI_INPUT_ARG_PUSH(5); \
+
+#define MULTI_INPUT_ARG_PUSH_7 \
+    MULTI_INPUT_ARG_PUSH_6 \
+    MULTI_INPUT_ARG_PUSH(6); \
+
+#define MULTI_INPUT_ARG_PUSH_8 \
+    MULTI_INPUT_ARG_PUSH_7 \
+    MULTI_INPUT_ARG_PUSH(7); \
+
+#define MULTI_INPUT_ARG_PUSH_9 \
+    MULTI_INPUT_ARG_PUSH_8 \
+    MULTI_INPUT_ARG_PUSH(8); \
+
+#define MULTI_INPUT_ARG_PUSH_10 \
+    MULTI_INPUT_ARG_PUSH_9 \
+    MULTI_INPUT_ARG_PUSH(9); \
+
+#define MULTI_INPUT_ARG_PUSH_11 \
+    MULTI_INPUT_ARG_PUSH_10 \
+    MULTI_INPUT_ARG_PUSH(10); \
+
+#define MULTI_INPUT_ARG_PUSH_12 \
+    MULTI_INPUT_ARG_PUSH_11 \
+    MULTI_INPUT_ARG_PUSH(11); \
+
+#define MULTI_INPUT_ARG_PUSH_13 \
+    MULTI_INPUT_ARG_PUSH_12 \
+    MULTI_INPUT_ARG_PUSH(12); \
+
+#define MULTI_INPUT_ARG_PUSH_14 \
+    MULTI_INPUT_ARG_PUSH_13 \
+    MULTI_INPUT_ARG_PUSH(13); \
+
+#define MULTI_INPUT_ARG_PUSH_15 \
+    MULTI_INPUT_ARG_PUSH_14 \
+    MULTI_INPUT_ARG_PUSH(14); \
+
+#define MULTI_INPUT_ARG_PUSH_16 \
+    MULTI_INPUT_ARG_PUSH_15 \
+    MULTI_INPUT_ARG_PUSH(15); \
+
+#define MULTI_INPUT_ARG_POP_1 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_2 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_3 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_4 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, _multi_input_3)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_6 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, _multi_input_4)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_6 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2,\
+    _multi_input_3, , _multi_input_4, _multi_input_5)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_7 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_8 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_9 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7, _multi_input_8)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_10 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7, _multi_input_8, _multi_input_9)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_11 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7, _multi_input_8, _multi_input_9, _multi_input_10)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_12 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7, _multi_input_8, _multi_input_9, _multi_input_10, _multi_input_11)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_13 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7, _multi_input_8, _multi_input_9, _multi_input_10, _multi_input_11, \
+    _multi_input_12)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_14 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6, \
+    _multi_input_7, _multi_input_8, _multi_input_9, _multi_input_10, _multi_input_11, \
+    _multi_input_12, _multi_input_13)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_15 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, , _multi_input_4, _multi_input_5, _multi_input_6 ,\
+    _multi_input_7, _multi_input_8, _multi_input_9, _multi_input_10, _multi_input_11, \
+    _multi_input_12, _multi_input_13, _multi_input_14)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+#define MULTI_INPUT_ARG_POP_16 \
+    do{ \
+        if (!input_que_.PopAllData(_multi_input_0, _multi_input_1, _multi_input_2, \
+    _multi_input_3, _multi_input_4, _multi_input_5, _multi_input_6 ,\
+    _multi_input_7, _multi_input_8, _multi_input_9, _multi_input_10, _multi_input_11, \
+    _multi_input_12, _multi_input_13, _multi_input_14, _multi_input_15)) \
+        { \
+            return HIAI_ERROR; \
+        } \
+    }while(0)
+
+#define DEFINE_MULTI_INPUT_ARGS_PUSH(index) MULTI_INPUT_ARG_PUSH_##index
+
+#define DEFINE_MULTI_INPUT_ARGS_POP(index) MULTI_INPUT_ARG_POP_##index
 
 #endif

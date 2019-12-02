@@ -100,7 +100,7 @@ ObjectDetectionInferenceEngine::~ObjectDetectionInferenceEngine() {
 }
 
 HIAI_StatusT ObjectDetectionInferenceEngine::Init(const hiai::AIConfig &config, const vector<hiai::AIModelDescription> &model_desc) {
-    HIAI_ENGINE_LOG(HIAI_DEBUG_INFO, "[ODInferenceEngine] start to initialize!");
+    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[ODInferenceEngine] start to initialize!");
     HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[ODInferenceEngine]");
 
     // create vdec api for channel1, and check the result
@@ -268,6 +268,7 @@ HIAI_StatusT ObjectDetectionInferenceEngine::ImagePreProcess( const ImageData<u_
         // input image must be yuv420sp nv12.
         return HIAI_ERROR;
     }
+    static unsigned imageid = 0;
     /**
    * when use dvpp_process only for resize function:
    *
@@ -288,7 +289,7 @@ HIAI_StatusT ObjectDetectionInferenceEngine::ImagePreProcess( const ImageData<u_
     dvpp_basic_vpc_para.crop_right = src_img.width % 2 == 0 ? src_img.width - 1 : src_img.width;
     dvpp_basic_vpc_para.crop_up = 0;
     dvpp_basic_vpc_para.crop_down = src_img.height % 2 == 0 ? src_img.height - 1 : src_img.height;
-    dvpp_basic_vpc_para.is_input_align = true;
+    dvpp_basic_vpc_para.is_input_align = false;
 
     ascend::utils::DvppVpcOutput dvpp_out;
     ascend::utils::DvppProcess dvpp_process(dvpp_basic_vpc_para);
@@ -296,9 +297,38 @@ HIAI_StatusT ObjectDetectionInferenceEngine::ImagePreProcess( const ImageData<u_
     if (ret != kDvppProcSuccess) {
         return HIAI_ERROR;
     }
+
+    DvppOutput dvppOutput;
+    ascend::utils::DvppToJpgPara dvppToJpgPara;
+
+    dvppToJpgPara.format = JPGENC_FORMAT_NV12;
+    dvppToJpgPara.level = 100;
+    dvppToJpgPara.resolution.height = dvpp_basic_vpc_para.dest_resolution.height;
+    dvppToJpgPara.resolution.width = dvpp_basic_vpc_para.dest_resolution.width;
+
+    ascend::utils::DvppProcess pDvppProcess(dvppToJpgPara);
+    pDvppProcess.DvppOperationProc((const char*)dvpp_out.buffer, (int32_t) dvpp_out.size, &dvppOutput);
+
+//    char buf1[256] = {0};
+//    _getcwd(buf1, sizeof(buf1));
+//    std::string image_name = "./out/image"+std::to_string(imageid++)+".jpg";
+//    FILE *fp = fopen(image_name.c_str(), "w+");
+//    if (NULL == fp) {
+//        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SaveFile] Save file engine: open file fail, %s", buf1);
+//        return HIAI_OK;
+//    } else {
+//        fwrite(dvppOutput.buffer, dvppOutput.size, 1, fp);
+//        fflush(fp);
+//        fclose(fp);
+//    }
+//    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SaveFile] Save %s, size:%d", image_name.c_str(), dvpp_out.size);
+
     // dvpp_out->pbuf
-    resized_img.data.reset(dvpp_out.buffer, default_delete<uint8_t[]>());
-    resized_img.size = dvpp_out.size;
+
+    resized_img.data.reset(dvppOutput.buffer, default_delete<uint8_t[]>());
+    resized_img.size = dvppOutput.size;
+//    resized_img.data.reset(dvpp_out.buffer, default_delete<uint8_t[]>());
+//    resized_img.size = dvpp_out.size;
 
     return HIAI_OK;
 }
@@ -353,19 +383,26 @@ bool ObjectDetectionInferenceEngine::ConvertVideoFrameToHfbc(const shared_ptr<Vi
     return true;
 }
 
+void ObjectDetectionInferenceEngine::SendDeviceStreamParam(ImageData<u_int8_t>& img){
+    shared_ptr<DeviceStreamData> device_stream_param = std::make_shared<DeviceStreamData>();
+    device_stream_param.get()->imgOrigin.buf.data.reset(img.data.get(), default_delete<uint8_t[]>());
+    device_stream_param.get()->imgOrigin.buf.len_of_byte = img.size;
+    SendData(0, "DeviceStreamData", static_pointer_cast<void>(device_stream_param));
+}
+
 void ObjectDetectionInferenceEngine::SendDeviceStreamParam(){
     shared_ptr<DeviceStreamData> device_stream_param = std::make_shared<DeviceStreamData>();
     SendData(0, "DeviceStreamData", static_pointer_cast<void>(device_stream_param));
 }
 
 void ObjectDetectionInferenceEngine::ObjectDetectInference() {
-    HIAI_ENGINE_LOG( "[ODInferenceEngine] start object detection inference, queue size:%d", yuv_image_queue.size());
+//    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[ODInferenceEngine] start object detection inference, queue size:%d", yuv_image_queue.size());
 
     while (!yuv_image_queue.empty()) {
         // init inference results tensor shared_ptr.
         shared_ptr<VideoImageParaT> video_image = yuv_image_queue.Pop();
         if (video_image == nullptr) {
-
+            HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "yuv_image_queue.Pop() failed, queue size:%d", yuv_image_queue.size());
             continue;
         }
 
@@ -374,9 +411,10 @@ void ObjectDetectionInferenceEngine::ObjectDetectInference() {
         HIAI_StatusT dvpp_ret = ImagePreProcess(video_image.get()->img,resized_img);
         if (dvpp_ret != HIAI_OK) {
             // if preprocess error,send input image to the next engine.
+
             return;
         }else{
-            SendDeviceStreamParam();
+            SendDeviceStreamParam(resized_img);
         }
     }
 }
@@ -411,7 +449,6 @@ HIAI_StatusT ObjectDetectionInferenceEngine::HandleFinishedData(const shared_ptr
 }
 
 HIAI_IMPL_ENGINE_PROCESS("object_detection", ObjectDetectionInferenceEngine,INPUT_SIZE) {
-    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[object_detection]");
     if (arg0 == nullptr) {
         return HIAI_ERROR;
     }

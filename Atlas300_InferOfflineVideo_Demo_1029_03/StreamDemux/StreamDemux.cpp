@@ -177,23 +177,27 @@ void* StreamDemux::DemuxStream2AtlasPacket(void* arg)
         }
         ret = _this->AddDecodeBsfInfo(bsf_ctx, pkt);
         if (ret != 0) {
+            av_packet_unref(&pkt);
+            av_init_packet(&pkt);
             std::cout << "AddDecodeBsfInfo failed" << std::endl;
             continue;
         }
-        std::shared_ptr<VideoImageParaT> output;
-        if (_this->PrepareVideoImageParaT(pkt, output) != HIAI_OK) {
-            std::cout << "PrepareImage failed" << std::endl;
-            continue;
-        }
-
-//        std::shared_ptr<StreamRawData> output;
-//        if (_this->PrepareStreamRawData(pkt, output) != HIAI_OK) {
+//        std::shared_ptr<VideoImageParaT> output;
+//        if (_this->PrepareVideoImageParaT(pkt, output) != HIAI_OK) {
+//            av_packet_unref(&pkt);
+//            av_init_packet(&pkt);
 //            std::cout << "PrepareImage failed" << std::endl;
 //            continue;
 //        }
-        _this->SendImageData(output);
-        printf("StreamDemux SendImageData, channel:%d.\n",_this->channel_id);
 
+        std::shared_ptr<StreamRawData> output;
+        if (_this->PrepareStreamRawData(pkt, output) != HIAI_OK) {
+            std::cout << "PrepareImage failed" << std::endl;
+            continue;
+        }
+        _this->SendImageData(output);
+        av_packet_unref(&pkt);
+        av_init_packet(&pkt);
     }
 }
 #else

@@ -28,11 +28,22 @@ int CreateGraph(int graphid, unsigned int channelid, const char* sourceurl){
     return id;
 }
 
-int CreateGraph(int graphid, unsigned int deviceid, unsigned int channelid, const char* sourceurl){
+int CreateMuiltEngineGraph(int graphid, unsigned int deviceid, unsigned int channelid, const char* sourceurl){
     int id = graphid;
     std::shared_ptr<dg::DynamicGraph> graph = std::make_shared<dg::DynamicGraph>();
     std::string url(sourceurl);
     id = CreateDynamicGraph3(id, deviceid, channelid, url, *graph);
+    map_graphs_lock.lock();
+    map_graphs.insert(std::map<uint32_t, std::shared_ptr<dg::DynamicGraph>>::value_type(channelid, graph));
+    map_graphs_lock.unlock();
+    return id;
+}
+
+int CreateGraph(int graphid, unsigned int deviceid, unsigned int channelid, const char* sourceurl){
+    int id = graphid;
+    std::shared_ptr<dg::DynamicGraph> graph = std::make_shared<dg::DynamicGraph>();
+    std::string url(sourceurl);
+    id = CreateDynamicGraph(id, deviceid, channelid, url, *graph);
     map_graphs_lock.lock();
     map_graphs.insert(std::map<uint32_t, std::shared_ptr<dg::DynamicGraph>>::value_type(channelid, graph));
     map_graphs_lock.unlock();
@@ -70,55 +81,6 @@ int DestroyAllGraphs(){
     }
 }
 #define CHANNEL_MAX 6
-std::map<uint32_t, dg::engine> streamer_engines;
-std::map<uint32_t, dg::engine> vdec_engines;
-std::map<uint32_t, dg::NodeInfo> input_nodes;
-
-/*
- * 此接口用于一个graph创建多路分析，还未完成
- **/
-int InitDynamicGraph(dg::DynamicGraph& graphs){
-    HIAI_StatusT ret;
-    int id = 100;
-    dg::graph g(id++, 0);
-
-    std::vector<dg::engine> engines;
-    dg::engine engine_ssd("SSDDetection", id++, 1, dg::engine::DEVICE);
-    engine_ssd.so_name.push_back("libSSDDetection.so");
-    {
-        dg::AIConfigItem item;
-        item.name = "model";
-        item.value= "../data/models/vgg_ssd_300x300.om";
-        engine_ssd.ai_config.items.push_back(item);
-    }
-    g.addEngine(engine_ssd);
-
-    for(int i=0; i<CHANNEL_MAX; i++){
-        {
-            dg::engine e("StreamPuller", id++, 1, dg::engine::HOST);
-            e.so_name.push_back("./libStreamPuller.so");
-            {
-                dg::AIConfigItem item;
-                item.name = "channel_id";
-                item.value= std::to_string(i);
-                e.ai_config.items.push_back(item);
-            }
-            streamer_engines.insert(std::map<uint32_t, dg::engine>::value_type(i, e));
-            input_nodes.insert(std::map<uint32_t, dg::NodeInfo>::value_type(i, std::make_tuple(g, e, 0)));
-            g.addEngine(e);
-        }
-        {
-            dg::engine e("VDecEngine", id++, 1, dg::engine::DEVICE);
-            e.so_name.push_back("libVDecEngine.so");
-            vdec_engines.insert(std::map<uint32_t, dg::engine>::value_type(i, e));
-            g.addEngine(e);
-        }
-        g.addConnection(dg::connection(streamer_engines[i], 0, vdec_engines[i], 0));
-        g.addConnection(dg::connection(vdec_engines[i], 0, vdec_engines[i], 0));
-    }
-
-    graphs.addGraph(g);
-}
 
 int CreateDynamicGraph(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs){
     HIAI_StatusT ret;
@@ -315,44 +277,88 @@ int CreateDynamicGraph2(int graphid, uint32_t deviceid, uint32_t channelid, std:
 }
 int CreateDynamicGraph3(int graphid, uint32_t deviceid, uint32_t channelid, std::string& sourceurl, dg::DynamicGraph& graphs){
     HIAI_StatusT ret;
-    int id = 100;
-    dg::graph g(id++, 0);
+    int id = 0;
+    std::map<uint32_t, dg::engine> streamer_engines;
+    std::map<uint32_t, dg::engine> vdec_engines;
+    std::map<uint32_t, dg::NodeInfo> input_nodes;
+    id = graphid;
+    dg::graph g(id++, deviceid);
 
-    std::vector<dg::engine> engines;
+    dg::engine e2("DstEngine", id++, 1, dg::engine::HOST);
+    e2.so_name.push_back("libDstEngine.so");
+    g.addEngine(e2);
 
-    for(int i=0; i<16; i++){
+    dg::engine e3("SSDDetection", id++, 1, dg::engine::DEVICE);
+    e3.so_name.push_back("libSSDDetection.so");
+    {
+        dg::AIConfigItem item;
+        item.name = "model";
+        item.value= "../data/models/vgg_ssd_300x300.om";
+        e3.ai_config.items.push_back(item);
+    }
+    g.addEngine(e3);
+
+    dg::engine e4("JpegEncode", id++, 1, dg::engine::DEVICE);
+    e4.so_name.push_back("libJpegEncode.so");
+    {
+        dg::AIConfigItem item;
+        item.name = "init_config";
+        item.value= "";
+        e4.ai_config.items.push_back(item);
+    }
+    {
+        dg::AIConfigItem item;
+        item.name = "passcode";
+        item.value= "";
+        e4.ai_config.items.push_back(item);
+    }
+    g.addEngine(e4);
+
+    for(int i=0; i<1; i++){
         {
-            dg::engine e("StreamDemux", id++, 1, dg::engine::HOST);
-            e.so_name.push_back("./libStreamDemux.so");
-            {
-                dg::AIConfigItem item;
-                item.name = "stream_url";
-                item.value= sourceurl;
-                e.ai_config.items.push_back(item);
-            }
+            dg::engine e("StreamPuller", id++, 1, dg::engine::HOST);
+            e.so_name.push_back("./libStreamPuller.so");
             {
                 dg::AIConfigItem item;
                 item.name = "channel_id";
-                item.value= std::to_string(i);
+                item.value= std::to_string(channelid);
                 e.ai_config.items.push_back(item);
             }
+            {
+                dg::AIConfigItem item;
+                item.name = "stream_name";
+                item.value= sourceurl;
+                e.ai_config.items.push_back(item);
+            }
+//            dg::engine e("StreamDemux", id++, 1, dg::engine::HOST);
+//            e.so_name.push_back("./libStreamDemux.so");
+//            {
+//                dg::AIConfigItem item;
+//                item.name = "stream_url";
+//                item.value= sourceurl;
+//                e.ai_config.items.push_back(item);
+//            }
+//            {
+//                dg::AIConfigItem item;
+//                item.name = "channel_id";
+//                item.value= std::to_string(i);
+//                e.ai_config.items.push_back(item);
+//            }
             streamer_engines.insert(std::map<uint32_t, dg::engine>::value_type(i, e));
             input_nodes.insert(std::map<uint32_t, dg::NodeInfo>::value_type(i, std::make_tuple(g, e, 0)));
             g.addEngine(e);
         }
         {
-            dg::engine e("object_detection", id++, 1, dg::engine::DEVICE);
-            e.so_name.push_back("libobject_detection.so");
+            dg::engine e("VDecEngine", id++, 1, dg::engine::DEVICE);
+            e.so_name.push_back("libVDecEngine.so");
             vdec_engines.insert(std::map<uint32_t, dg::engine>::value_type(i, e));
             g.addEngine(e);
         }
         g.addConnection(dg::connection(streamer_engines[i], 0, vdec_engines[i], 0));
-        g.addConnection(dg::connection(vdec_engines[i], 0, vdec_engines[i], 0));
+        g.addConnection(dg::connection(vdec_engines[i], 0, e3, i));
     }
-
-    dg::engine e2("DstEngine", id++, 1, dg::engine::HOST);
-    e2.so_name.push_back("libDstEngine.so");
-    g.addEngine(e2);
+    g.addConnection(dg::connection(e3, 0, e4, 0));
+    g.addConnection(dg::connection(e4, 0, e2, 0));
 
     graphs.addGraph(g);
 
@@ -362,21 +368,18 @@ int CreateDynamicGraph3(int graphid, uint32_t deviceid, uint32_t channelid, std:
         return -1;
     }
 
-    dg::NodeInfo outputNode= std::make_tuple(g, e2, 0);
+    std::map<uint32_t, dg::NodeInfo>::iterator it = input_nodes.begin();
+    for(it; it!=input_nodes.end(); it++)
+    {
+        graphs.sendData(it->second, "string", std::make_shared<std::string>());
+    }
 
+    dg::NodeInfo outputNode= std::make_tuple(g, e2, 0);
     ret = graphs.setDataRecvFunctor(outputNode, std::make_shared<CustomDataRecvInterface>(""));
     if (ret != HIAI_OK) {
         printf("setDataRecvFunctor failed %d\n", ret);
         return -1;
     }
 
-    std::map<uint32_t, dg::NodeInfo>::iterator it = input_nodes.begin();
-    for(it; it != input_nodes.end(); it++){
-        ret = graphs.sendData(it->second, "string", std::make_shared<std::string>());
-        if (ret != HIAI_OK) {
-            printf("sendData failed %d\n", ret);
-            return -1;
-        }
-    }
     return id;
 }

@@ -54,13 +54,40 @@ void MkdirP(const std::string& outdir)
     }
 }
 
+DstEngine::DstEngine():input_que_(DST_INPUT_SIZE, hiai::MultiTypeQueue::MULTI_QUEUE_16_QUE_NUM){
+
+}
+
 HIAI_StatusT DstEngine::Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc) {
     auto aimap = kvmap(config);
     if (aimap.count("labelPath")) {
-        labelPath = aimap["labelPath"];
+//        labelPath = aimap["labelPath"];
     }else {
-        labelPath = "./imagenet1000_clsidx_to_labels.txt";
+//        labelPath = "./imagenet1000_clsidx_to_labels.txt";
     }
+    return HIAI_OK;
+}
+
+HIAI_StatusT DstEngine::ProcessResult(int output_port, const std::shared_ptr<DeviceStreamData>& inputArg)
+{
+    std::shared_ptr<SsdResults> results = std::make_shared<SsdResults>();
+
+    for (const auto& det : inputArg->detectResult) {
+        std::shared_ptr<BicycleDetectionResult> outdata = std::make_shared<BicycleDetectionResult>();
+        int argmax = det.classifyResult.classIndex;
+        float score = det.classifyResult.confidence;
+        outdata.get()->type = det.classId;
+        outdata.get()->confidence = det.confidence;
+        outdata.get()->xmin = det.location.anchor_lt.x;
+        outdata.get()->ymin = det.location.anchor_lt.y;
+        outdata.get()->xmax = det.location.anchor_rb.x;
+        outdata.get()->ymax = det.location.anchor_rb.y;
+        results.get()->results.push_back(outdata);
+        results.get()->channelid = inputArg.get()->info.channelId;
+    }
+    SendData(output_port, "SsdResults", static_pointer_cast<void>(results));
+
+    results.get()->results.clear();
     return HIAI_OK;
 }
 
@@ -100,25 +127,56 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
 }
 HIAI_IMPL_ENGINE_PROCESS("DstEngine", DstEngine, DST_INPUT_SIZE)
 {
-//    HIAI_ENGINE_LOG(HIAI_INFO, "[DstEngine] start process!");
-    if (arg0 == nullptr){
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  The input arg0 is nullptr");
-        return HIAI_ERROR;
-    }
-    auto inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
+    DEFINE_MULTI_INPUT_ARGS_PUSH(1);
+    DEFINE_MULTI_INPUT_ARGS_POP(1);
+    HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine] recv all data");
 
-    // if it is the end of stream, send end signal to main
-   if(inputArg->info.isEOS){
-        std::shared_ptr<std::string> result_data(new std::string);
-        hiai::Engine::SendData(0, "string", std::static_pointer_cast<void>(result_data));
-        return HIAI_OK;
-   }
-    string resultFileTxt;
+    std::vector<std::shared_ptr<DeviceStreamData>> devicestreamdata_v;
+    devicestreamdata_v.push_back(_multi_input_0);
 
-    if(ProcessResult(resultFileTxt, inputArg) != HIAI_OK){
-        printf("[DstEngine]  process result failed\n");
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[DstEngine]  process result failed");
-        return HIAI_ERROR;
+    static int imageid = 0;
+    std::string imagename = "./out/image" + std::to_string(imageid++) +".jpg";
+    int size = devicestreamdata_v.size();
+    for(int i=0; i<size; i++){
+        std::shared_ptr<DeviceStreamData>& temp = devicestreamdata_v[i];
+        uint8_t* data = temp.get()->imgOrigin.buf.data.get();
+        if(!data) {
+            printf("data is null.\n");
+            break;
+        }
+        FILE* fp = fopen(imagename.c_str(), "wb+");
+        fwrite(data, 1, temp.get()->imgOrigin.buf.len_of_byte, fp);
+        fflush(fp);
+        fclose(fp);
     }
+
+    std::shared_ptr<SsdResults> results = std::make_shared<SsdResults>();
+    std::shared_ptr<BicycleDetectionResult> outdata = std::make_shared<BicycleDetectionResult>();
+    int argmax = 0;
+    float score = 0;
+    outdata.get()->type = 0;
+    outdata.get()->confidence = 0;
+    outdata.get()->xmin = 0;
+    outdata.get()->ymin = 0;
+    outdata.get()->xmax = 0;
+    outdata.get()->ymax = 0;
+    results.get()->results.push_back(outdata);
+    results.get()->channelid = 0;
+    SendData(0, "SsdResults", static_pointer_cast<void>(results));
+    //    if(_multi_input_0 && _multi_input_1 && _multi_input_2 && _multi_input_3 &&
+//            _multi_input_4 && _multi_input_5 && _multi_input_6 && _multi_input_7 &&
+//            _multi_input_8 && _multi_input_9 && _multi_input_11 && _multi_input_12 &&
+//            _multi_input_13 && _multi_input_14 && _multi_input_15){
+
+//    }
+//    if (arg0){
+//        printf("arg0\n");
+//        auto inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
+//        if(ProcessResult(0, inputArg) != HIAI_OK){
+//            printf("[DstEngine]  process result failed\n");
+//            return HIAI_ERROR;
+//        }
+//    }
+
     return HIAI_OK;
 }
