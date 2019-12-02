@@ -93,8 +93,7 @@ HIAI_StatusT CustomDataRecvInterface::RecvData(const std::shared_ptr<void>& mess
             int count1 = BicycleDetection::getCount1Total(channelid);
             int count2 = BicycleDetection::getCount2Total(channelid);
 //            HIAI_ENGINE_LOG(HIAI_IDE_DEBUG, "[Main] RecvData: Channel id %d, Total count1:%d, Total count2:%d\n", channelid, count1, count2);
-            LOG_DEBUG("[%d-%d-%d %02d:%02d:%02d.%d] Channel id %d, Total count1:%d, Total count2:%d\n",
-                      ptm->tm_year, ptm->tm_mon, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec, channelid, count1, count2);
+            LOG_DEBUG("Channel id %d, Total count1:%d, Total count2:%d\n",channelid, count1, count2);
         }
     }
 

@@ -6,19 +6,6 @@
 
 int64_t lastTime = 0;
 
-int StreamPuller::rtsp_client_interrupt_callback(void* arg)
-{
-    int64_t currentTime, lastTime; //当前时间
-    currentTime = av_gettime();
-
-    if ((currentTime - lastTime) > 30000) {
-        printf("rtsp input stream of channel %d timeout in interrrupt callback\n", dev_id);
-        return -1;
-    }
-
-    return 0;
-}
-
 std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamName)
 {
     AVFormatContext* formatContext = nullptr;
@@ -26,10 +13,6 @@ std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamNa
     av_dict_set(&options, "rtsp_transport", "tcp", 0);
     av_dict_set(&options, "max_delay", "5000000", 0); //最大demuxing延时（微秒）
     av_dict_set(&options, "stimeout", "3000000", 0);
-
-    lastTime = av_gettime();
-    formatContext->interrupt_callback.callback = rtsp_client_interrupt_callback; //ffmpeg中断回调函数
-    formatContext->interrupt_callback.opaque = (void *)instance; //ffmpeg中断回调函数参数
 
     int ret = avformat_open_input(&formatContext, streamName.c_str(), nullptr, &options);
     if (nullptr != options) {
@@ -87,7 +70,6 @@ void StreamPuller::pullStreamDataLoop()
     AVPacket pkt;
     struct timeval start, end;
     while (1) {
-        lastTime = av_gettime();
         gettimeofday(&start, NULL);
         if (stop || nullptr == pFormatCtx) {
             break;
