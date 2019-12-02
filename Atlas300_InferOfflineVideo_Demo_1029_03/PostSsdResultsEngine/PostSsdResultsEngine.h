@@ -8,7 +8,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui.hpp"
 
-#define DST_INPUT_SIZE 1
+#define DST_INPUT_SIZE 2
 #define DST_OUTPUT_SIZE 1
 
 class PostSsdResultsEngine : public hiai::Engine

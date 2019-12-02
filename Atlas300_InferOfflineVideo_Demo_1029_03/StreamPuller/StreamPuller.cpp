@@ -176,8 +176,6 @@ HIAI_StatusT StreamPuller::Init(const hiai::AIConfig& config, const std::vector<
     }
     CHECK_RETURN_IF(aimap.count("channel_id") <= 0);
     channelId = std::stoi(aimap["channel_id"]);
-    av_register_all();
-    avformat_network_init();
 
     if (aimap.count("stream_name")) {
         streamName = aimap["stream_name"];

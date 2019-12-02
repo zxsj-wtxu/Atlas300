@@ -46,8 +46,7 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-HIAI_StatusT SSDDetection::Init(const hiai::AIConfig& config,
-    const std::vector<hiai::AIModelDescription>& model_desc)
+HIAI_StatusT SSDDetection::Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc)
 {
     HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] start init!");
     HIAI_StatusT ret = HIAI_OK;
@@ -78,8 +77,7 @@ HIAI_StatusT SSDDetection::Init(const hiai::AIConfig& config,
     }
     // input dims
     if (1 != inputTensorDims.size()) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] inputTensorDims.size() != 1 (%d vs. %d)",
-            inputTensorDims.size(), 1);
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] inputTensorDims.size() != 1 (%d vs. %d)", inputTensorDims.size(), 1);
         return HIAI_ERROR;
     }
 
@@ -100,6 +98,7 @@ HIAI_StatusT SSDDetection::Init(const hiai::AIConfig& config,
         HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] creat output tensors failed!");
         return HIAI_ERROR;
     }
+
     HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "[SSDDetection] end init!");
     return HIAI_OK;
 }
@@ -107,44 +106,86 @@ HIAI_StatusT SSDDetection::Init(const hiai::AIConfig& config,
 HIAI_IMPL_ENGINE_PROCESS("SSDDetection", SSDDetection, DT_INPUT_SIZE)
 {
     HIAI_StatusT ret = HIAI_OK;
-    std::shared_ptr<DeviceStreamData> inputArg = std::static_pointer_cast<DeviceStreamData>(arg0);
-    if (nullptr == inputArg) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "Fail to process invalid message");
-        return HIAI_ERROR;
-    }
+    std::shared_ptr<DeviceStreamData> inputArg = nullptr;
+    DEFINE_MULTI_INPUT_ARGS_PUSH(2);
+    DEFINE_MULTI_INPUT_ARGS_POP(2);
 
-    inputArgQueue.push_back(std::move(inputArg));
-    // waiting for batch data
-    if (inputArgQueue.size() < kBatchSize) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR,
-            "Collecting batch data, in queue, current size %d", inputArgQueue.size());
-        return HIAI_OK;
-    }
-    // resize yuv data to input size
-    uint8_t* dataBufferPtr = inputDataBuffer[0].get();
+    DEFINE_MULTI_INPUT_POP_QUEUE(2);
+
     for (int i = 0; i < inputArgQueue.size(); i++) {
+        uint8_t* dataBufferPtr = inputDataBuffer[0].get();
         inputArg = inputArgQueue[i];
-        char outFilename[128];
-        time_pair vpcStamps;
+
         vpcResize(inputArg->imgOrigin.buf.data.get(), inputArg->imgOrigin.width, inputArg->imgOrigin.height, dataBufferPtr, kWidth, kHeight);
         dataBufferPtr += kInputSize;
-    }
-    // inference
-    hiai::AIContext aiContext;
-    time_pair process;
-    ret = modelManager->Process(aiContext, inputTensorVec, outputTensorVec, 0);
-    if (hiai::SUCCESS != ret) {
-        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "AI Model Manager Process failed");
-        return HIAI_ERROR;
+
+        // inference
+        hiai::AIContext aiContext;
+        time_pair process;
+        ret = modelManager->Process(aiContext, inputTensorVec, outputTensorVec, 0);
+        if (hiai::SUCCESS != ret) {
+            HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "AI Model Manager Process failed");
+            return HIAI_ERROR;
+        }
+
+        postProcessDetection(i, &inputArg, 0.2);
     }
 
-    postProcessDetection();
+//    postProcessDetection();
+
     inputArgQueue.clear();
 
     return HIAI_OK;
 }
 
-HIAI_StatusT SSDDetection::postProcessDetection()
+//HIAI_StatusT SSDDetection::postProcessDetection()
+//{
+//    // tensor shape 200x7x1x1
+//    // for each row (7 elements), layout as follows
+//    // batch, label, score, xmin, ymin, xmax, ymax
+//    shared_ptr<hiai::AINeuralNetworkBuffer> tensorResults = std::static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensorVec[0]);
+//    shared_ptr<hiai::AINeuralNetworkBuffer> tensorObjNum = std::static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensorVec[1]);
+//    int objNum = (int)(*(float*)tensorObjNum->GetBuffer());
+//    const float thresh = 0.2;
+//    const int colSize = 7;
+//    int validFaceCount = 0;
+//    float* resPtr = (float*)tensorResults->GetBuffer();
+//    for (int i = 0; i < objNum; i++) {
+//        float score = *(resPtr + 2);
+//        if (score > thresh) {
+//            int batch = (int)(*resPtr);
+//            int label = (int)(*(resPtr + 1));
+//            float xmin = *(resPtr + 3);
+//            float ymin = *(resPtr + 4);
+//            float xmax = *(resPtr + 5);
+//            float ymax = *(resPtr + 6);
+//            validFaceCount++;
+//            // batch, label, score, xmin, ymin, xmax, ymax);
+//            shared_ptr<DeviceStreamData>* streamPtr = &inputArgQueue[batch];
+//            const uint32_t img_width = (*streamPtr)->imgOrigin.width;
+//            const uint32_t img_height = (*streamPtr)->imgOrigin.height;
+//            DetectInfo info;
+//            info.classId = label;
+//            info.location.anchor_lt.x = std::max(xmin, 0.f) * img_width;
+//            info.location.anchor_lt.y = std::max(ymin, 0.f) * img_height;
+//            info.location.anchor_rb.x = std::min(xmax, 1.f) * img_width;
+//            info.location.anchor_rb.y = std::min(ymax, 1.f) * img_height;
+//            info.confidence = score;
+//            (*streamPtr)->detectResult.push_back(info);
+//        }
+//        resPtr += colSize;
+//    }
+//    for (auto& outputData : inputArgQueue) {
+//        HIAI_StatusT ret = SendData(0, "DeviceStreamData", std::static_pointer_cast<void>(outputData));
+//        if (HIAI_OK != ret) {
+//            HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "SSDDetection send data failed");
+//        }
+//    }
+
+//    return HIAI_OK;
+//}
+
+HIAI_StatusT SSDDetection::postProcessDetection(int channel, shared_ptr<DeviceStreamData>* streamPtr, const float thresh)
 {
     // tensor shape 200x7x1x1
     // for each row (7 elements), layout as follows
@@ -152,9 +193,7 @@ HIAI_StatusT SSDDetection::postProcessDetection()
     shared_ptr<hiai::AINeuralNetworkBuffer> tensorResults = std::static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensorVec[0]);
     shared_ptr<hiai::AINeuralNetworkBuffer> tensorObjNum = std::static_pointer_cast<hiai::AINeuralNetworkBuffer>(outputTensorVec[1]);
     int objNum = (int)(*(float*)tensorObjNum->GetBuffer());
-    const float thresh = 0.2;
     const int colSize = 7;
-    int validFaceCount = 0;
     float* resPtr = (float*)tensorResults->GetBuffer();
     for (int i = 0; i < objNum; i++) {
         float score = *(resPtr + 2);
@@ -165,9 +204,8 @@ HIAI_StatusT SSDDetection::postProcessDetection()
             float ymin = *(resPtr + 4);
             float xmax = *(resPtr + 5);
             float ymax = *(resPtr + 6);
-            validFaceCount++;
             // batch, label, score, xmin, ymin, xmax, ymax);
-            shared_ptr<DeviceStreamData>* streamPtr = &inputArgQueue[batch];
+//            shared_ptr<DeviceStreamData>* streamPtr = &inputArgQueue[batch];
             const uint32_t img_width = (*streamPtr)->imgOrigin.width;
             const uint32_t img_height = (*streamPtr)->imgOrigin.height;
             DetectInfo info;
@@ -181,11 +219,9 @@ HIAI_StatusT SSDDetection::postProcessDetection()
         }
         resPtr += colSize;
     }
-    for (auto& outputData : inputArgQueue) {
-        HIAI_StatusT ret = SendData(0, "DeviceStreamData", std::static_pointer_cast<void>(outputData));
-        if (HIAI_OK != ret) {
-            HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "SSDDetection send data failed");
-        }
+    HIAI_StatusT ret = SendData(0, "DeviceStreamData", std::static_pointer_cast<void>(*streamPtr));
+    if (HIAI_OK != ret) {
+        HIAI_ENGINE_LOG(HIAI_IDE_ERROR, "SSDDetection send data failed");
     }
 
     return HIAI_OK;
