@@ -30,53 +30,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * ============================================================================
  */
+#ifndef SAMPLE_SSDDETECTION_H
+#define SAMPLE_SSDDETECTION_H
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
-
-#include "common_data_type.h"
+#include "dvpp/idvppapi.h"
+#include "hiaiengine/ai_model_manager.h"
 #include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
+#include "stream_data.h"
+#include <utility>
 
-extern "C" {
-#include "libavformat/avformat.h"
-}
+#define DT_INPUT_SIZE 1
+#define DT_OUTPUT_SIZE 16
 
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
-
-class StreamPuller : public hiai::Engine {
+class SSDDetection : public hiai::Engine {
 public:
-    HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
+    SSDDetection() {}
 
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
+    HIAI_StatusT Init(const hiai::AIConfig& config,
+        const std::vector<hiai::AIModelDescription>& model_desc);
 
-    ~StreamPuller();
+    HIAI_DEFINE_PROCESS(DT_INPUT_SIZE, DT_OUTPUT_SIZE)
 
 private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
+    uint32_t kBatchSize = 1;
+    uint32_t kChannel = 0;
+    uint32_t kWidth = 0;
+    uint32_t kHeight = 0;
+    uint32_t kAlignedWidth = 0;
+    uint32_t kAlignedHeight = 0;
+    uint32_t kInputSize = 0;
+    std::shared_ptr<hiai::AIModelManager> modelManager;
+    std::vector<std::shared_ptr<DeviceStreamData> > inputArgQueue;
+    std::vector<std::shared_ptr<uint8_t> > inputDataBuffer;
+    std::vector<std::shared_ptr<uint8_t> > outputDataBuffer;
+    std::vector<std::shared_ptr<hiai::IAITensor> > inputTensorVec;
+    std::vector<std::shared_ptr<hiai::IAITensor> > outputTensorVec;
 
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
+    HIAI_StatusT postProcessDetection();
 };
 
-#endif
+#endif //ATLASFACEDEMO_FACEDETECTION_H

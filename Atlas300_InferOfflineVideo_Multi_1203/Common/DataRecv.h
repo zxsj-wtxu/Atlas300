@@ -30,53 +30,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * ============================================================================
  */
+#ifndef ATLASFACEDEMO_DATARECV_H
+#define ATLASFACEDEMO_DATARECV_H
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
-
-#include "common_data_type.h"
-#include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
-
-extern "C" {
-#include "libavformat/avformat.h"
-}
-
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
-
-class StreamPuller : public hiai::Engine {
+#include <hiaiengine/api.h>
+#include <string>
+class CustomDataRecvInterface : public hiai::DataRecvInterface {
 public:
-    HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
+    /**
+    * @ingroup DataRecvInterface
+    * @brief init
+    * @param [in]desc:std::string
+    */
+    CustomDataRecvInterface(const std::string& filename)
+        : file_name_(filename)
+    {
+    }
 
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
-
-    ~StreamPuller();
+    /**
+    * @ingroup DataRecvInterface
+    * @brief RecvData RecvData
+    * @param [in]
+    */
+    HIAI_StatusT RecvData(const std::shared_ptr<void>& message);
 
 private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
-
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
+    std::string file_name_;
 };
 
-#endif
+#endif //ATLASFACEDEMO_DATARECV_H

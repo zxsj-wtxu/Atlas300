@@ -1,8 +1,8 @@
 /**
  * ============================================================================
  *
- * Copyright (C) 2019, Huawei Technologies Co., Ltd. All Rights Reserved.
- *
+ * Copyright (c) Huawei Technologies Co., Ltd. 2018-2019. All rights reserved.
+ * Description: Atlas Sample
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -31,52 +31,51 @@
  * ============================================================================
  */
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
+#ifndef TRANS_SEAR__H
+#define TRANS_SEAR__H
 
-#include "common_data_type.h"
-#include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
+#include <unistd.h>
+#include <sys/stat.h>
+#include "hiaiengine/data_type.h"
+#include "hiaiengine/data_type_reg.h"
+#include "hiaiengine/status.h"
+#include "hiaiengine/ai_memory.h"
+#include "AppCommon.h"
+#include "dvpp/dvpp_config.h"
+/*
+typedef struct YUVInfo {
+    std::string fileName;
+    uint32_t width;
+    uint32_t height;
+    uint32_t format;
+}YUVInfoT;
 
-extern "C" {
-#include "libavformat/avformat.h"
+typedef struct YUVImageData {
+    uint32_t width;
+    uint32_t height;
+    eEncodeFormat format;
+    std::shared_ptr<uint8_t> yuvData;
+    uint32_t len_of_byte;
+}YUVImageDataT;
+
+static void GetTransSearPtr(void *dataPtr, std::string &structStr, uint8_t *&buffer, uint32_t &bufferSize)
+{
+    YUVImageDataT *ctrlInfo = (YUVImageDataT *)dataPtr;
+    structStr = std::string((char *)dataPtr, sizeof(YUVImageDataT));
+    buffer = (uint8_t *)ctrlInfo->yuvData.get();
+    bufferSize = ctrlInfo->len_of_byte;
 }
 
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
-
-class StreamPuller : public hiai::Engine {
-public:
-    HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
-
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
-
-    ~StreamPuller();
-
-private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
-
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
-};
-
+static std::shared_ptr<void> GetTransDearPtr(const char *ctrlPtr,
+                                             const uint32_t &ctrllen, const uint8_t *dataPtr, const uint32_t &dataLen)
+{
+    std::shared_ptr<YUVImageDataT> ctrlInfo = std::make_shared<YUVImageDataT>();
+    ctrlInfo->width = ((YUVImageDataT *)ctrlPtr)->width;
+    ctrlInfo->height = ((YUVImageDataT *)ctrlPtr)->height;
+    ctrlInfo->format = ((YUVImageDataT *)ctrlPtr)->format;
+    ctrlInfo->len_of_byte = ((YUVImageDataT *)ctrlPtr)->len_of_byte;
+    ctrlInfo->yuvData.reset((unsigned char *)dataPtr, hiai::HIAIMemory::HIAI_DFree);
+    return std::static_pointer_cast<void>(ctrlInfo);
+}
+*/
 #endif

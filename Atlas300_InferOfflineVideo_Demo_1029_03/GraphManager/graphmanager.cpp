@@ -193,13 +193,13 @@ int CreateDynamicGraph(int graphid, uint32_t deviceid, uint32_t channelid, std::
     g.addEngine(e2);
     g.addEngine(e3);
     g.addEngine(e4);
-//    g.addEngine(e5);
+    g.addEngine(e5);
 
     g.addConnection(dg::connection(e0, 0, e1, 0));
     g.addConnection(dg::connection(e1, 0, e2, 0));
-    g.addConnection(dg::connection(e2, 0, e3, 0));
-//    g.addConnection(dg::connection(e2, 0, e5, 0));
-//    g.addConnection(dg::connection(e5, 0, e3, 0));
+//    g.addConnection(dg::connection(e2, 0, e3, 0));
+    g.addConnection(dg::connection(e2, 0, e5, 0));
+    g.addConnection(dg::connection(e5, 0, e3, 0));
     g.addConnection(dg::connection(e3, 0, e4, 0));
 
     graphs.addGraph(g);

@@ -31,52 +31,35 @@
  * ============================================================================
  */
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
+#ifndef JPEGENCODE_H
+#define JPEGENCODE_H
 
-#include "common_data_type.h"
+#include <cstdio>
+#include <vector>
+#include "hiaiengine/api.h"
 #include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
+#include "hiaiengine/data_type.h"
+#include "TransSear.h"
+#include "DvppJpegEncode.h"
+#include "Common.h"
 
-extern "C" {
-#include "libavformat/avformat.h"
-}
+#define JC_INPUT_SIZE 1
+#define JC_OUTPUT_SIZE 1
 
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
+//HIAI_REGISTER_SERIALIZE_FUNC("YUVImageDataT", YUVImageDataT, GetTransSearPtr, GetTransDearPtr);
 
-class StreamPuller : public hiai::Engine {
+class JpegEncode : public hiai::Engine {
 public:
+    JpegEncode() {};
+
+    ~JpegEncode() {};
+
     HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
 
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
-
-    ~StreamPuller();
+    HIAI_DEFINE_PROCESS(JC_INPUT_SIZE, JC_OUTPUT_SIZE);
 
 private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
-
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
+    std::shared_ptr<DvppJpegEncode> dvppJpegEapi;
 };
 
-#endif
+#endif //IMGDECENGINE_H

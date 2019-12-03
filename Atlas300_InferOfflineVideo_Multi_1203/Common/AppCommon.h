@@ -1,8 +1,8 @@
 /**
  * ============================================================================
  *
- * Copyright (C) 2019, Huawei Technologies Co., Ltd. All Rights Reserved.
- *
+ * Copyright (c) Huawei Technologies Co., Ltd. 2018-2019. All rights reserved.
+ * Description: Atlas Sample
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -31,52 +31,55 @@
  * ============================================================================
  */
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
+#ifndef APPCOMMON_H
+#define APPCOMMON_H
 
-#include "common_data_type.h"
-#include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
+#include <sys/time.h>
+#include <stdio.h>
+#include <unistd.h>
 
-extern "C" {
-#include "libavformat/avformat.h"
+using namespace std;
+static const int32_t TIME_THOUSAND = 1000;
+
+inline unordered_map<string, string> kvmap(const hiai::AIConfig& config)
+{
+    unordered_map<string, string> kv;
+    for (int index = 0; index < config.items_size(); ++index) {
+        const ::hiai::AIConfigItem& item = config.items(index);
+        kv.insert(std::make_pair(item.name(), item.value()));
+    }
+    return std::move(kv);
 }
 
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
+static std::vector<std::string> splitpath(const std::string &str, const std::set<char> delimiters)
+{
+    std::vector<std::string> result;
+    char const *pch = str.c_str();
+    char const *start = pch;
+    for (; *pch; ++pch) {
+        if (delimiters.find(*pch) != delimiters.end()) {
+            if (start != pch) {
+                std::string str(start, pch);
+                result.push_back(str);
+            } else {
+                result.push_back("");
+            }
+            start = pch + 1;
+        }
+    }
+    result.push_back(start);
+    return result;
+}
 
-class StreamPuller : public hiai::Engine {
-public:
-    HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
+static long getCurentTime()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * TIME_THOUSAND + tv.tv_usec / TIME_THOUSAND;
+}
 
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
+#endif  // DVPPRESIZE_APPCOMMON_H
 
-    ~StreamPuller();
 
-private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
 
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
-};
 
-#endif

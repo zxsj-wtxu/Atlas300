@@ -42,13 +42,7 @@ std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamNa
     AVFormatContext* formatContext = nullptr;
     AVDictionary* options = nullptr;
     av_dict_set(&options, "rtsp_transport", "tcp", 0);
-    av_dict_set(&options, "max_delay", "5000000", 0); //最大demuxing延时（微秒）
     av_dict_set(&options, "stimeout", "3000000", 0);
-//    if (!av_dict_get(options, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {
-//        av_dict_set(&options, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
-//    }
-//    av_dict_set(&format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
-
     int ret = avformat_open_input(&formatContext, streamName.c_str(), nullptr, &options);
     if (nullptr != options) {
         av_dict_free(&options);
@@ -104,19 +98,14 @@ void StreamPuller::pullStreamDataLoop()
 {
     AVPacket pkt;
     while (1) {
-
         if (stop || nullptr == pFormatCtx) {
             break;
         }
         av_init_packet(&pkt);
         int ret = av_read_frame(pFormatCtx.get(), &pkt);
-        if (ret < 0 ) {
-            if ((ret == AVERROR_EOF || avio_feof(pFormatCtx.get()->pb))) {
-                printf("EOF!exit\n");
-                exit(-1);
-            }
-            if (pFormatCtx.get()->pb && pFormatCtx.get()->pb->error)
-                break;
+        if (0 != ret) {
+            printf("channel %d Read frame failed, continue!\n", channelId);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         } else if (pkt.stream_index == videoIndex) {
             if (pkt.size <= 0) {
@@ -154,7 +143,7 @@ void StreamPuller::pullStreamDataLoop()
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
             } else {
-//                printf("channel %d pkt.size %d\n", channelId, pkt.size);
+                printf("channel %d pkt.size %d\n", channelId, pkt.size);
             }
 
             av_packet_unref(&pkt);
@@ -166,10 +155,6 @@ void StreamPuller::pullStreamDataLoop()
     output->info.format = format;
     output->info.isEOS = 1;
     HIAI_StatusT ret = SendData(0, "StreamRawData", std::static_pointer_cast<void>(output));
-    if (HIAI_OK != ret) {
-        printf("VDecEngine senddata failed! ret = %d\n", ret);
-        return;
-    }
     printf("channel %d pullStreamDataLoop end of stream\n", channelId);
     av_init_packet(&pkt);
     stop = 1;
@@ -213,6 +198,7 @@ HIAI_StatusT StreamPuller::Init(const hiai::AIConfig& config, const std::vector<
     }
     CHECK_RETURN_IF(aimap.count("channel_id") <= 0);
     channelId = std::stoi(aimap["channel_id"]);
+    avformat_network_init();
 
     if (aimap.count("stream_name")) {
         streamName = aimap["stream_name"];

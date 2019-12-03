@@ -30,53 +30,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * ============================================================================
  */
+#ifndef ATLASSAMPLES_VDECENGINE_H
+#define ATLASSAMPLES_VDECENGINE_H
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
-
+// #include "app_common.h"
 #include "common_data_type.h"
+#include "dvpp/idvppapi.h"
+#include "dvpp/vdec_hiai.h"
 #include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
 
-extern "C" {
-#include "libavformat/avformat.h"
-}
+#define VD_INPUT_SIZE 1
+#define VD_OUTPUT_SIZE 1
 
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
-
-class StreamPuller : public hiai::Engine {
+class VDecEngine : public hiai::Engine {
 public:
-    HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
+    VDecEngine() {}
+    ~VDecEngine();
+    HIAI_StatusT Init(const hiai::AIConfig& config,
+        const std::vector<hiai::AIModelDescription>& model_desc);
 
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
+    HIAI_DEFINE_PROCESS(VD_INPUT_SIZE, VD_OUTPUT_SIZE)
 
-    ~StreamPuller();
+    HIAI_StatusT Hfbc2YuvOld(FRAME* frame, vpc_in_msg& vpcInMsg);
 
 private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
+    static void frameCallback(FRAME* frame, void* hiai_data);
 
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
+    IDVPPAPI* pVdecHandle = NULL;
+    IDVPPAPI* pDvppHandle = NULL;
+    vdec_in_msg vdecInMsg;
+    StreamInfo inputInfo;
+    uint64_t frameId = 0;
+    time_pair stamps;
 };
 
-#endif
+#endif //ATLASSAMPLES_VDECENGINE_H

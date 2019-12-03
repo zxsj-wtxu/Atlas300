@@ -31,52 +31,67 @@
  * ============================================================================
  */
 
-#ifndef ATLASFACEDEMO_STREAMPULLER_H
-#define ATLASFACEDEMO_STREAMPULLER_H
+#ifndef COMMON_DATA_TYPE_H_x
+#define COMMON_DATA_TYPE_H_x
 
-#include "common_data_type.h"
-#include "hiaiengine/engine.h"
-#include <atomic>
-#include <mutex>
-#include <thread>
+#include "RawDataBufferHigh.h"
+#include "stream_data.h"
+#include "dvpp/dvpp_config.h"
+#include <vector>
+#include <memory>
 
-extern "C" {
-#include "libavformat/avformat.h"
+
+#define YUV_BYTES 1.5
+#define BGR_BYTES 3
+#define RGB_BYTES 3
+
+#define H264 0
+#define H265 1
+
+template <class T>
+inline void bboxToSquare(T& xmin, T& ymin, T& xmax, T& ymax)
+{
+    T w = xmax - xmin;
+    T h = ymax - ymin;
+    T maxSide = std::max(w, h);
+    xmin = xmin + (w - maxSide) * 0.5;
+    ymin = ymin + (h - maxSide) * 0.5;
+    xmax = xmin + maxSide;
+    ymax = ymin + maxSide;
 }
 
-#define RP_INPUT_SIZE 1
-#define RP_OUTPUT_SIZE 1
+template <class T>
+inline void bboxToSquare(Rectangle<T>& rect)
+{
+    bboxToSquare(rect.anchor_lt.x, rect.anchor_lt.y,
+        rect.anchor_rb.x, rect.anchor_rb.y);
+}
 
-class StreamPuller : public hiai::Engine {
-public:
-    HIAI_StatusT Init(const hiai::AIConfig& config, const std::vector<hiai::AIModelDescription>& model_desc);
+template <class T>
+inline void checkBound(Rectangle<T>& rect, int32_t upBoundW, int32_t upBoundH, int32_t lowBoundW = 0, int32_t lowBoundH = 0)
+{
+    rect.anchor_lt.x = std::max(rect.anchor_lt.x, lowBoundW);
+    rect.anchor_lt.y = std::max(rect.anchor_lt.y, lowBoundH);
+    rect.anchor_rb.x = std::min(rect.anchor_rb.x, upBoundW);
+    rect.anchor_rb.y = std::min(rect.anchor_rb.y, upBoundH);
+}
 
-    HIAI_DEFINE_PROCESS(RP_INPUT_SIZE, RP_OUTPUT_SIZE)
+struct FaceTrack {
+    uint64_t id;
+    uint32_t age;
+    uint32_t totalVisibleCount;
+    uint32_t consecutiveInvisibleCount;
+    shared_ptr<FaceObject> face;
 
-    ~StreamPuller();
-
-private:
-    // todo
-    // ?
-    void getStreamInfo();
-    void pullStreamDataLoop();
-    void stopStream();
-    HIAI_StatusT startStream(const string& streamName);
-
-    // class member
-    std::shared_ptr<AVFormatContext> pFormatCtx;
-    // stream info
-    uint64_t blockId = 0;
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t channelId = 0;
-    uint32_t format = H264;
-    int videoIndex;
-    std::atomic<int> stop = { 0 };
-    std::thread sendDataRunner;
-    RawDataBufferHigh dataBuffer;
-    uint64_t curBlockId = 0;
-    std::string streamName;
+    FaceTrack(uint64_t id_, const shared_ptr<FaceObject>& face_)
+        : id(id_)
+        , age(1)
+        , totalVisibleCount(1)
+        , consecutiveInvisibleCount(0)
+        , face(face_)
+    {
+    }
 };
+
 
 #endif
