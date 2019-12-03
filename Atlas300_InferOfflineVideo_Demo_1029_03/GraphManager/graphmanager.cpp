@@ -42,7 +42,7 @@ int CreateGraph(int graphid, unsigned int deviceid, unsigned int channelid, cons
     int id = graphid;
     std::shared_ptr<dg::DynamicGraph> graph = std::make_shared<dg::DynamicGraph>();
     std::string url(sourceurl);
-    id = CreateDynamicGraph3(id, deviceid, channelid, url, *graph);
+    id = CreateDynamicGraph(id, deviceid, channelid, url, *graph);
     map_graphs_lock.lock();
     map_graphs.insert(std::map<uint32_t, std::shared_ptr<dg::DynamicGraph>>::value_type(channelid, graph));
     map_graphs_lock.unlock();

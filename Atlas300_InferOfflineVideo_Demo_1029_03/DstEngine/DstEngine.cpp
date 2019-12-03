@@ -66,16 +66,16 @@ HIAI_StatusT DstEngine::Init(const hiai::AIConfig& config, const std::vector<hia
 
 HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const std::shared_ptr<DeviceStreamData>& inputArg)
 {
-    uint32_t graph_cur_id = this->GetGraphId();
-    MkdirP(RESULT_FOLDER);
-    string res_folder = RESULT_FOLDER + to_string(graph_cur_id)+"/";
-    MkdirP(res_folder);
-    string resultFile = res_folder + FILE_PRE_FIX + to_string(getCurentTime());
-    string resultFileJpg = resultFile + ".jpg";
-    unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
-    vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
-    cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
-    int i=0;
+//    uint32_t graph_cur_id = this->GetGraphId();
+//    MkdirP(RESULT_FOLDER);
+//    string res_folder = RESULT_FOLDER + to_string(graph_cur_id)+"/";
+//    MkdirP(res_folder);
+//    string resultFile = res_folder + FILE_PRE_FIX + to_string(getCurentTime());
+//    string resultFileJpg = resultFile + ".jpg";
+//    unsigned char *ptr_uint8 = (unsigned char *)(inputArg->imgOrigin.buf.data.get());
+//    vector<unsigned char> buff(ptr_uint8, ptr_uint8 + inputArg->imgOrigin.buf.len_of_byte);
+//    cv::Mat image = cv::imdecode(buff, CV_LOAD_IMAGE_COLOR);
+//    int i=0;
     std::shared_ptr<SsdResults> results = std::make_shared<SsdResults>();
 
     for (const auto& det : inputArg->detectResult) {
@@ -90,9 +90,9 @@ HIAI_StatusT DstEngine::ProcessResult(const std::string& resultFileTxt, const st
         outdata.get()->ymax = det.location.anchor_rb.y;
         results.get()->results.push_back(outdata);
         results.get()->channelid = inputArg.get()->info.channelId;
-        cv::rectangle(image, cv::Point(outdata.get()->xmin, outdata.get()->ymin), cv::Point(outdata.get()->xmax, outdata.get()->ymax), cv::Scalar(0, 0, 255), 2);
+//        cv::rectangle(image, cv::Point(outdata.get()->xmin, outdata.get()->ymin), cv::Point(outdata.get()->xmax, outdata.get()->ymax), cv::Scalar(0, 0, 255), 2);
     }
-    cv::imwrite(resultFileJpg, image);
+//    cv::imwrite(resultFileJpg, image);
     SendData(0, "SsdResults", static_pointer_cast<void>(results));
 
     results.get()->results.clear();

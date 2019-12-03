@@ -4,8 +4,6 @@
 #include "utils_common.h"
 #include <chrono>
 
-int64_t lastTime = 0;
-
 std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamName)
 {
     AVFormatContext* formatContext = nullptr;
@@ -13,7 +11,6 @@ std::shared_ptr<AVFormatContext> createFormatContext(const std::string& streamNa
     av_dict_set(&options, "rtsp_transport", "tcp", 0);
     av_dict_set(&options, "max_delay", "5000000", 0); //最大demuxing延时（微秒）
     av_dict_set(&options, "stimeout", "3000000", 0);
-
     int ret = avformat_open_input(&formatContext, streamName.c_str(), nullptr, &options);
     if (nullptr != options) {
         av_dict_free(&options);
